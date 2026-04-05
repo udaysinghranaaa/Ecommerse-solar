@@ -1,134 +1,239 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Search, ShoppingCart, Menu, X, ChevronDown } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  Search,
+  ShoppingCart,
+  Menu,
+  X,
+  ChevronDown,
+  Phone,
+  Mail,
+} from "lucide-react";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
 
-export default function Navbar() {
+export default function Navbar({ categories }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showMobileCategories, setShowMobileCategories] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   const navLinks = [
-    { label: 'Home', href: '#' },
-    { label: 'Shop', href: '#', hasDropdown: true },
-    { label: 'Subsidy', href: '#' },
-    { label: 'Category', href: '#', hasDropdown: true },
-    { label: 'About Us', href: '#' },
-    { label: 'Contact Us', href: '#' },
+    { label: "Home", href: "/" },
+    { label: "Shop", href: "/shop" },
+    { label: "Subsidy", href: "/subsidy" },
+    { label: "Category", href: "#", hasDropdown: true },
+    { label: "About Us", href: "/about" },
+    { label: "Contact Us", href: "/contact" }, // ✅ FIXED
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-md">
-      {/* Main Navbar Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 bg-white shadow-md border-b">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <a href="#" className="flex items-center">
-              <span className="text-2xl font-bold text-green-600">Hans</span>
-              <span className="text-2xl font-bold text-gray-800">Solar</span>
-            </a>
+
+          {/* 🔥 LOGO */}
+          <div
+            onClick={() => router.push("/")}
+            className="flex items-center cursor-pointer"
+          >
+            <Image
+              src="/HANSLOGO.png"
+              alt="Hans Solar Logo"
+              width={120}
+              height={40}
+              className="object-contain"
+            />
           </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
+          {/* 🔥 DESKTOP NAV */}
+          <div className="hidden md:flex items-center gap-6">
+
             {navLinks.map((link, index) => (
               <div key={index} className="relative group">
-                <a
-                  href={link.href}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50 rounded-md transition-colors flex items-center gap-1"
+
+                <button
+                  onClick={() => {
+                    if (link.href !== "#") router.push(link.href);
+                  }}
+                  className={`flex items-center gap-1 text-sm font-medium transition ${
+                    pathname === link.href
+                      ? "text-green-600"
+                      : "text-gray-700 hover:text-green-600"
+                  }`}
                 >
                   {link.label}
-                  {link.hasDropdown && (
-                    <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
-                  )}
-                </a>
-                
-                {/* Dropdown Menu */}
+                  {link.hasDropdown && <ChevronDown size={16} />}
+                </button>
+
+                {/* 🔥 CATEGORY DROPDOWN */}
                 {link.hasDropdown && (
-                  <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-green-600 rounded-t-md">
-                      Option 1
-                    </a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-green-600">
-                      Option 2
-                    </a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-green-600 rounded-b-md">
-                      Option 3
-                    </a>
+                  <div className="absolute top-10 w-56 bg-white shadow-xl rounded-xl hidden group-hover:block z-50 border">
+
+                    {categories?.length > 0 ? (
+                      categories.map((cat) => (
+                        <div
+                          key={cat._id}
+                          onClick={() =>
+                            router.push(`/shop?category=${cat._id}`)
+                          }
+                          className="px-4 py-2 hover:bg-green-50 cursor-pointer text-sm"
+                        >
+                          {cat.name}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="px-4 py-2 text-gray-400">
+                        No categories
+                      </p>
+                    )}
+
                   </div>
                 )}
               </div>
             ))}
+
+            {/* 🔥 SEARCH */}
+            <div className="flex items-center border rounded-xl px-3 py-1">
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="outline-none px-2 text-sm w-40"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    router.push(`/shop?search=${searchQuery}`);
+                  }
+                }}
+              />
+            </div>
+
+            {/* 🔥 CART */}
+            <button
+              onClick={() => router.push("/cart")}
+              className="hover:text-green-600"
+            >
+              <ShoppingCart size={22} />
+            </button>
+
+            {/* 🔥 CALL */}
+            <a
+              href="tel:9358622621"
+              className="flex items-center gap-1 bg-green-600 text-white px-4 py-1.5 rounded-xl text-sm hover:bg-green-700"
+            >
+              <Phone size={16} />
+              Call
+            </a>
+
+            {/* 🔥 CONTACT BUTTON (NEW UI) */}
+            <button
+              onClick={() => router.push("/contact")}
+              className="flex items-center gap-1 bg-blue-600 text-white px-4 py-1.5 rounded-xl text-sm hover:bg-blue-700"
+            >
+              <Mail size={16} />
+              Contact
+            </button>
           </div>
 
-          {/* Search Box, Cart, and Login */}
-          <div className="hidden md:flex items-center gap-4">
-            
-            {/* Search Box */}
-            <div className="relative">
+          {/* 🔥 MOBILE MENU BUTTON */}
+          <div className="md:hidden">
+            <button onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
+
+        {/* 🔥 MOBILE MENU */}
+        {isOpen && (
+          <div className="md:hidden flex flex-col space-y-2 pb-4">
+
+            {navLinks.map((link, index) => (
+              <div key={index}>
+                <button
+                  onClick={() => {
+                    if (link.href !== "#") {
+                      router.push(link.href);
+                      setIsOpen(false);
+                    } else {
+                      setShowMobileCategories(!showMobileCategories);
+                    }
+                  }}
+                  className="px-3 py-2 text-left text-sm w-full flex justify-between items-center"
+                >
+                  {link.label}
+                  {link.hasDropdown && <ChevronDown size={16} />}
+                </button>
+
+                {/* MOBILE CATEGORY */}
+                {link.hasDropdown && showMobileCategories && (
+                  <div className="pl-4">
+                    {categories?.map((cat) => (
+                      <div
+                        key={cat._id}
+                        onClick={() => {
+                          router.push(`/shop?category=${cat._id}`);
+                          setIsOpen(false);
+                        }}
+                        className="py-1 text-sm text-gray-600"
+                      >
+                        {cat.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* SEARCH */}
+            <div className="flex items-center border rounded-lg px-2 mx-3">
+              <Search size={18} />
               <input
                 type="text"
                 placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-48 px-4 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="outline-none px-2 py-1 text-sm w-full"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    router.push(`/shop?search=${e.target.value}`);
+                    setIsOpen(false);
+                  }
+                }}
               />
-              <Search size={18} className="absolute right-3 top-2.5 text-gray-400" />
             </div>
 
-            {/* Cart Icon */}
-            <button className="relative p-2 text-gray-700 hover:text-green-600 transition-colors">
-              <ShoppingCart size={24} />
-              <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                0
-              </span>
-            </button>
+            {/* CART + CALL + CONTACT */}
+            <div className="flex justify-between items-center px-3 mt-2 gap-2">
 
-            {/* Login Button */}
-            <button className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-              <span>Login</span>
-              <span>→</span>
-            </button>
-          </div>
+              <button onClick={() => router.push("/cart")}>
+                <ShoppingCart size={22} />
+              </button>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-3">
-            <button className="p-2 text-gray-700 hover:text-green-600">
-              <Search size={20} />
-            </button>
-            <button className="p-2 text-gray-700 hover:text-green-600">
-              <ShoppingCart size={20} />
-            </button>
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-gray-700 hover:text-green-600"
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {navLinks.map((link, index) => (
               <a
-                key={index}
-                href={link.href}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50 rounded-md"
+                href="tel:9358622621"
+                className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded-lg"
               >
-                {link.label}
+                <Phone size={16} />
+                Call
               </a>
-            ))}
-            <button className="w-full mt-4 px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
-              Login
-            </button>
+
+              <button
+                onClick={() => {
+                  router.push("/contact");
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded-lg"
+              >
+                <Mail size={16} />
+                Contact
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

@@ -1,73 +1,96 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-
-const banners = [
-  {
-    image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80&w=1200",
-    title: "YOUR SATISFACTION OUR PROMISE",
-    hashtag: "#LETSBUILDAGREENERINDIATOGETHER",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=1200",
-    title: "CLEAN ENERGY FOR A BETTER TOMORROW",
-    hashtag: "#SOLARPOWEREDFUTURE",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&q=80&w=1200",
-    title: "SAVE MONEY WITH SMART SOLAR",
-    hashtag: "#SMARTSOLARSOLUTIONS",
-  }
-];
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Hero() {
+  const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // 🔥 FETCH FROM BACKEND
   useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/banners")
+      .then((res) => setBanners(res.data))
+      .catch((err) => console.log("Banner Error:", err));
+  }, []);
+
+  // 🔥 AUTO SLIDE
+  useEffect(() => {
+    if (banners.length === 0) return;
+
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 5000);
+    }, 4000);
+
     return () => clearInterval(timer);
-  }, []);
+  }, [banners]);
+
+  if (banners.length === 0) {
+    return (
+      <div className="h-[400px] flex items-center justify-center text-gray-400">
+        Loading banners...
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full overflow-hidden bg-white">
-      {/* Main Banner Container */}
-      <div 
+
+      {/* 🔥 SLIDER */}
+      <div
         className="flex transition-transform duration-700 ease-in-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {banners.map((banner, index) => (
-          <div key={index} className="flex-shrink-0 w-full flex flex-col md:flex-row min-h-[400px] md:h-[500px]">
-            {/* Left Side: Image */}
+          <div
+            key={index}
+            className="flex-shrink-0 w-full flex flex-col md:flex-row min-h-[400px] md:h-[500px]"
+          >
+            {/* LEFT IMAGE */}
             <div className="w-full md:w-3/5 relative">
-              <img 
-                src={banner.image} 
-                alt="Solar Panel House" 
+              <img
+                src={`http://localhost:5000/${banner.image}`}
+                alt="Banner"
                 className="w-full h-full object-cover"
               />
             </div>
 
-            {/* Right Side: Text with Gradient/Solid Green Background */}
-            <div className="w-full md:w-2/5 bg-gradient-to-r from-cyan-500 to-green-600 text-white flex flex-col justify-center p-8 md:p-12 relative">
+            {/* RIGHT CONTENT */}
+            <div className="w-full md:w-2/5 bg-gradient-to-r from-green-600 to-green-800 text-white flex flex-col justify-center p-8 md:p-12 relative">
               <div className="max-w-md">
-                <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-8">
+
+                <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
                   {banner.title}
                 </h1>
-                <p className="text-sm md:text-base font-semibold tracking-wider opacity-90 uppercase">
-                  {banner.hashtag}
+
+                <p className="text-sm md:text-base opacity-90 mb-6">
+                  {banner.subtitle}
                 </p>
+
+                {banner.link && (
+                  <a
+                    href={banner.link}
+                    className="inline-block px-6 py-3 bg-white text-green-700 font-semibold rounded-full hover:bg-gray-200 transition"
+                  >
+                    Explore Now →
+                  </a>
+                )}
               </div>
-              
-              {/* WhatsApp Floating Icon (as seen in image) */}
-              <a 
-                href="https://wa.me/yournumber" 
-                target="_blank" 
+
+              {/* WHATSAPP BUTTON */}
+              <a
+                href="https://wa.me/your-number"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="absolute bottom-6 right-6 bg-green-500 p-3 rounded-full shadow-lg hover:bg-green-400 transition-colors"
+                className="absolute bottom-6 right-6 bg-green-500 p-3 rounded-full shadow-lg hover:bg-green-400 transition"
               >
-                <svg className="w-6 h-6 text-white fill-current" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                <svg
+                  className="w-6 h-6 text-white"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
                 </svg>
               </a>
             </div>
@@ -75,18 +98,19 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* Slide Indicators (dots) */}
+      {/* 🔥 DOTS */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {banners.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`h-1.5 transition-all duration-300 rounded-full ${
-              currentSlide === index ? "w-8 bg-white" : "w-4 bg-white/50"
+            className={`h-2 transition-all duration-300 rounded-full ${
+              currentSlide === index ? "w-8 bg-green-500" : "w-4 bg-white/50"
             }`}
           />
         ))}
       </div>
+
     </div>
   );
 }

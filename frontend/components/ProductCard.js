@@ -1,92 +1,110 @@
 "use client";
 
 import React from "react";
-import { FiShoppingCart, FiStar, FiLock, FiArrowRight, FiPackage } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { FiPackage, FiShoppingCart } from "react-icons/fi";
 import { motion } from "framer-motion";
 
-const BASE_URL = "http://localhost:5000"; // ✅ IMPORTANT
+const BASE_URL = "http://localhost:5000";
 
 const ProductCard = ({ product }) => {
+  const router = useRouter();
 
-  // ✅ FIXED IMAGE HANDLING
+  // 🔥 IMAGE HANDLE
   const getImageUrl = () => {
-    if (!product.images || product.images.length === 0) return null;
+    if (!product?.images || product.images.length === 0) return null;
 
     const firstImage = product.images[0];
 
     if (typeof firstImage === "object" && firstImage.url) {
-      return firstImage.url;
+      return `${BASE_URL}/${firstImage.url}`;
     }
 
-    // ✅ ADD BASE URL
     return `${BASE_URL}/${firstImage}`;
   };
 
   const imageUrl = getImageUrl();
 
-  const isInStock = product.stock > 0;
-
   const productName = product.title || "Untitled Product";
   const productPrice = product.discountPrice || 0;
   const mrpPrice = product.mrpPrice || 0;
 
-  const calculateDiscountPercentage = () => {
-    if (mrpPrice && productPrice && mrpPrice > productPrice) {
-      return Math.round(((mrpPrice - productPrice) / mrpPrice) * 100);
-    }
-    return null;
-  };
-
-  const discountPercentage = calculateDiscountPercentage();
+  // 🔥 DISCOUNT
+  const discountPercentage =
+    mrpPrice > productPrice
+      ? Math.round(((mrpPrice - productPrice) / mrpPrice) * 100)
+      : null;
 
   return (
     <motion.div
-      whileHover={{ y: -10 }}
-      className="group bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-500 cursor-pointer flex flex-col h-full"
+      whileHover={{ y: -8 }}
+      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
     >
-      {/* IMAGE */}
-      <div className="aspect-[4/5] bg-[#fcfdfe] p-8 flex items-center justify-center relative">
+      {/* 🔥 IMAGE */}
+      <div className="relative aspect-[4/5] bg-gray-50 flex items-center justify-center p-6 overflow-hidden">
+
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={productName}
-            className="max-h-full object-contain group-hover:scale-110 transition-transform duration-700"
+            className="max-h-full object-contain group-hover:scale-110 transition duration-500"
           />
         ) : (
-          <div className="flex flex-col items-center gap-4 text-slate-300">
-            <FiPackage size={60} />
+          <div className="flex flex-col items-center text-gray-300">
+            <FiPackage size={50} />
             <span>No Image</span>
           </div>
         )}
+
+        {/* 🔥 DISCOUNT BADGE */}
+        {discountPercentage && (
+          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-md">
+            {discountPercentage}% OFF
+          </span>
+        )}
+
       </div>
 
-      {/* INFO */}
-      <div className="p-6 flex flex-col gap-3">
-        <h3 className="text-lg font-bold">{productName}</h3>
+      {/* 🔥 INFO */}
+      <div className="p-4 flex flex-col flex-grow">
 
-        <p className="text-sm text-gray-500 line-clamp-2">
+        <h3 className="text-md font-semibold text-gray-900 line-clamp-1">
+          {productName}
+        </h3>
+
+        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
           {product.description || "No description available"}
         </p>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold">₹{productPrice}</span>
+        {/* 🔥 PRICE */}
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-lg font-bold text-gray-900">
+            ₹{productPrice}
+          </span>
 
           {mrpPrice > productPrice && (
-            <span className="line-through text-gray-400">
+            <span className="line-through text-gray-400 text-sm">
               ₹{mrpPrice}
             </span>
           )}
         </div>
 
-        {discountPercentage && (
-          <span className="text-green-600 text-sm font-semibold">
-            {discountPercentage}% OFF
-          </span>
-        )}
+        {/* 🔥 BUTTONS */}
+        <div className="mt-auto pt-4 flex gap-2">
 
-        <button className="mt-3 bg-black text-white py-2 rounded-xl hover:bg-blue-600 transition">
-          View Details →
-        </button>
+          <button
+            onClick={() => router.push(`/product/${product._id}`)}
+            className="flex-1 bg-black text-white py-2 rounded-lg text-sm hover:bg-gray-800 transition"
+          >
+            View
+          </button>
+
+          <button className="bg-green-600 text-white px-3 rounded-lg hover:bg-green-700 transition">
+            <FiShoppingCart size={18} />
+          </button>
+
+        </div>
+
       </div>
     </motion.div>
   );

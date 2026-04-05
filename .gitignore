@@ -1,5 +1,6 @@
 node_modules
-.next
+backend/node_modules
+frontend/node_modules
 .env
-dist
-build
+.next
+frontend/.next
