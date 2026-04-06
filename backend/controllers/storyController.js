@@ -1,4 +1,4 @@
-const Story = require("../models/Story");
+const Story = require("../models/story");
 
 exports.createStory = async (req, res) => {
   try {
