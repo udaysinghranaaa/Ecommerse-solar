@@ -1,13 +1,16 @@
 import axios from "axios";
 
+// ✅ ENV se URL lo
+const BASE_URL = import.meta.env.VITE_API_URL;
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api"
+  baseURL: `${BASE_URL}/api`,
 });
 
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
 
-  // ✅ FIX: invalid values filter करो
+  // ✅ invalid values filter
   if (token && token !== "undefined" && token !== "null") {
     req.headers.Authorization = `Bearer ${token}`;
   } else {
