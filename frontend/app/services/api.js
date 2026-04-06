@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// ✅ ENV se URL lo
-const BASE_URL = import.meta.env.VITE_API_URL;
+// ✅ Next.js ENV
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,
@@ -10,7 +10,6 @@ const API = axios.create({
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
 
-  // ✅ invalid values filter
   if (token && token !== "undefined" && token !== "null") {
     req.headers.Authorization = `Bearer ${token}`;
   } else {

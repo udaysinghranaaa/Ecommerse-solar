@@ -15,7 +15,7 @@ export default function Home() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/category")
+      .get("https://ecommerse-solar.onrender.com/api/category")
       .then((res) => {
         const data =
           res.data.categories || (Array.isArray(res.data) ? res.data : []);
@@ -26,23 +26,12 @@ export default function Home() {
 
   return (
     <>
-      {/* 🔥 HERO */}
       <Hero />
-
-      {/* 🔥 PRODUCTS */}
       <ProductGrid title="⚡ Featured Solar Solutions" type="trending" />
       <ProductGrid title="🌟 Customer Favorites" type="featured" />
-
-      {/* 🔥 CATEGORIES */}
       <Categories categories={categories} />
-
-      {/* 🔥 TRUST */}
       <WhyChoose />
-
-      {/* 🔥 REVIEWS */}
       <Reviews />
-
-      {/* 🔥 STORIES */}
       <Stories />
     </>
   );
