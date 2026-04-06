@@ -22,17 +22,17 @@ if (!fs.existsSync(uploadPath)) {
 
 // ================= MIDDLEWARE =================
 
-// ⚠️ IMPORTANT ORDER (FIRST CORS)
+// ✅ CORS (production ready)
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "*",
   credentials: true,
 }));
 
-// 🔥 BODY PARSERS
+// ✅ BODY PARSERS
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🔥 STATIC FILES (IMAGE SERVE)
+// ✅ STATIC FILES
 app.use("/uploads", express.static(uploadPath));
 
 // ================= ROUTES =================
@@ -61,5 +61,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running: http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
