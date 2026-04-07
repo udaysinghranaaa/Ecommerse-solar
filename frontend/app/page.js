@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "@/utils/api"; // ✅ use this instead of axios
 
 import Hero from "../components/Hero";
 import ProductGrid from "../components/ProductGrid";
@@ -14,14 +14,13 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("https://ecommerse-solar.onrender.com/api/category")
+    API.get("/category")
       .then((res) => {
-        const data =
-          res.data.categories || (Array.isArray(res.data) ? res.data : []);
-        setCategories(data);
+        setCategories(res.data.categories || []);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.error("CATEGORY ERROR:", err);
+      });
   }, []);
 
   return (

@@ -1,7 +1,11 @@
 import axios from "axios";
 
-// ✅ Next.js ENV
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+// ✅ Safe BASE URL
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ecommerse-solar.onrender.com";
+
+console.log("API BASE URL:", BASE_URL);
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,

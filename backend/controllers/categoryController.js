@@ -3,29 +3,28 @@ const Category = require("../models/Category");
 // ================= CREATE =================
 exports.createCategory = async (req, res) => {
   try {
-    console.log("BODY:", req.body);   // 🔥 debug
-    console.log("FILE:", req.file);   // 🔥 debug
-
-    // ❌ OLD (remove)
-    // const { name } = req.body;
-
-    // ✅ SAFE WAY
     const name = req.body?.name;
 
     if (!name) {
-      return res.status(400).json({ message: "Category name required" });
+      return res.status(400).json({
+        success: false,
+        message: "Category name required",
+      });
     }
 
-    // 🔥 duplicate check
+    // 🔥 duplicate check (case-insensitive)
     const existing = await Category.findOne({
       name: { $regex: new RegExp("^" + name + "$", "i") },
     });
 
     if (existing) {
-      return res.status(400).json({ message: "Category already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "Category already exists",
+      });
     }
 
-    // 🔥 IMAGE HANDLE
+    // 🔥 image handle
     let imagePath = "";
     if (req.file) {
       imagePath = req.file.path;
@@ -36,21 +35,40 @@ exports.createCategory = async (req, res) => {
       image: imagePath,
     });
 
-    res.status(201).json(category);
+    res.status(201).json({
+      success: true,
+      message: "Category created successfully",
+      category,
+    });
 
   } catch (err) {
     console.error("CREATE CATEGORY ERROR:", err);
-    res.status(500).json({ message: err.message });
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 // ================= GET ALL =================
 exports.getCategories = async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
-    res.json(categories);
+
+    res.status(200).json({
+      success: true,
+      categories: categories || [],
+    });
+
   } catch (err) {
     console.error("GET CATEGORY ERROR:", err);
-    res.status(500).json({ message: err.message });
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      categories: [],
+    });
   }
 };

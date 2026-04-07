@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 export default function Categories({ categories }) {
   const router = useRouter();
 
+  const BASE_URL = "https://ecommerse-solar.onrender.com";
+
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* HEADING */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-gray-900">
             Explore Solar Categories
@@ -20,13 +21,12 @@ export default function Categories({ categories }) {
           <div className="w-16 h-1 bg-green-500 mx-auto mt-3 rounded"></div>
         </div>
 
-        {/* GRID */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {categories.map((c) => {
 
-            // 🔥 IMAGE FIX (MOST IMPORTANT)
+            // ✅ FIXED IMAGE URL
             const imageUrl = c.image
-              ? `http://localhost:5000/${c.image}`
+              ? `${BASE_URL}/${c.image}`
               : "https://images.unsplash.com/photo-1509395176047-4a66953fd231";
 
             return (
