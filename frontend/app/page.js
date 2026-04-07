@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import API from "@/utils/api"; // ✅ use this instead of axios
-
+import API from "../services/api";
 import Hero from "../components/Hero";
 import ProductGrid from "../components/ProductGrid";
 import Categories from "../components/Categories";
