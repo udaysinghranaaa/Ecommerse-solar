@@ -11,6 +11,7 @@ export default function Categories({ categories }) {
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4">
 
+        {/* HEADING */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-gray-900">
             Explore Solar Categories
@@ -21,12 +22,13 @@ export default function Categories({ categories }) {
           <div className="w-16 h-1 bg-green-500 mx-auto mt-3 rounded"></div>
         </div>
 
+        {/* GRID */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {categories.map((c) => {
 
-            // ✅ FIXED IMAGE URL
-            const imageUrl = c.image
-              ? `${BASE_URL}/${c.image}`
+            // ✅ FIXED IMAGE URL (MAIN FIX)
+            const imageUrl = c?.image
+              ? `${BASE_URL}/${c.image.replace(/\\/g, "/")}`
               : "https://images.unsplash.com/photo-1509395176047-4a66953fd231";
 
             return (
@@ -37,7 +39,7 @@ export default function Categories({ categories }) {
               >
                 <img
                   src={imageUrl}
-                  alt={c.name}
+                  alt={c.name || "category"}
                   className="w-full h-40 object-cover group-hover:scale-105 transition duration-300"
                 />
 
