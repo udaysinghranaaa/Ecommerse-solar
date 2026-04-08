@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import API from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiPlus, FiGrid, FiShoppingBag, FiStar, FiSettings, FiLogOut, 
@@ -81,6 +81,9 @@ const FormCheckbox = ({ label, icon: Icon, name, checked, onChange }) => (
 );
 
 export default function AdminDashboard() {
+  // ✅ FIX 1: BASE_URL safety
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ecommerse-solar.onrender.com";
+  
   const [activeTab, setActiveTab] = useState("ADD_PRODUCT");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -154,48 +157,58 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/products");
-      const fetchedProducts = res.data.products || (Array.isArray(res.data) ? res.data : []);
+      const res = await API.get("/products");
+      // ✅ FIX 2: Standardize data format
+      const fetchedProducts = res.data.products || res.data || [];
       setProducts(fetchedProducts);
     } catch (err) {
-      console.error("Fetch Products Error:", err);
+      // ✅ FIX 4: Better console error
+      console.error(err.response?.data || err.message);
     }
   };
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/category");
-      setCategories(res.data.categories || (Array.isArray(res.data) ? res.data : []));
+      const res = await API.get("/category");
+      // ✅ FIX 2: Standardize data format
+      setCategories(res.data.categories || res.data || []);
     } catch (err) {
-      console.error("Fetch Categories Error:", err);
+      // ✅ FIX 4: Better console error
+      console.error(err.response?.data || err.message);
     }
   };
 
   const fetchReviews = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/reviews");
-      setReviews(res.data);
+      const res = await API.get("/reviews");
+      // ✅ FIX 2: Standardize data format
+      setReviews(res.data.reviews || res.data || []);
     } catch (err) {
-      console.error("Review Fetch Error:", err);
+      // ✅ FIX 4: Better console error
+      console.error(err.response?.data || err.message);
     }
   };
 
   const fetchStories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/stories");
-      setStories(res.data);
+      const res = await API.get("/stories");
+      // ✅ FIX 2: Standardize data format
+      setStories(res.data.stories || res.data || []);
     } catch (err) {
-      console.error("Story Fetch Error:", err);
+      // ✅ FIX 4: Better console error
+      console.error(err.response?.data || err.message);
     }
   };
 
   // 🔥 FETCH BANNERS
   const fetchBanners = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/banners");
-      setBanners(res.data);
+      const res = await API.get("/banners");
+      // ✅ FIX 2: Standardize data format
+      setBanners(res.data.banners || res.data || []);
     } catch (err) {
-      console.error("Banner Fetch Error:", err);
+      // ✅ FIX 4: Better console error
+      console.error(err.response?.data || err.message);
     }
   };
 
@@ -236,14 +249,12 @@ export default function AdminDashboard() {
     if (!categoryName) return alert("Please enter a category name");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("name", categoryName);
       if (categoryImage) formData.append("image", categoryImage);
 
-      await axios.post("http://localhost:5000/api/category", formData, {
+      await API.post("/category", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"
         },
       });
@@ -253,6 +264,7 @@ export default function AdminDashboard() {
       setCategoryImagePreview(null);
       fetchCategories();
     } catch (err) {
+      // ✅ FIX 3: Improved error handling
       alert(err.response?.data?.message || "Failed to create category");
     } finally {
       setLoading(false);
@@ -263,16 +275,14 @@ export default function AdminDashboard() {
     if (!reviewForm.name || !reviewForm.message) return alert("Please fill required fields");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("name", reviewForm.name);
       formData.append("message", reviewForm.message);
       formData.append("rating", reviewForm.rating);
       if (reviewForm.image) formData.append("image", reviewForm.image);
 
-      await axios.post("http://localhost:5000/api/reviews", formData, {
+      await API.post("/reviews", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
@@ -281,7 +291,8 @@ export default function AdminDashboard() {
       setReviewPreview(null);
       fetchReviews();
     } catch (err) {
-      alert("Failed to create review");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to create review");
     } finally {
       setLoading(false);
     }
@@ -291,7 +302,6 @@ export default function AdminDashboard() {
     if (!storyForm.name || !storyForm.title || !storyForm.description) return alert("Please fill required fields");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("name", storyForm.name);
       formData.append("title", storyForm.title);
@@ -300,9 +310,8 @@ export default function AdminDashboard() {
       formData.append("video", storyForm.video);
       if (storyForm.image) formData.append("image", storyForm.image);
 
-      await axios.post("http://localhost:5000/api/stories", formData, {
+      await API.post("/stories", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
@@ -311,99 +320,35 @@ export default function AdminDashboard() {
       setStoryPreview(null);
       fetchStories();
     } catch (err) {
-      alert("Failed to create story");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to create story");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 CREATE BANNER
   const createBanner = async () => {
-    if (!bannerForm.title || !bannerForm.image) return alert("Please fill required fields (Title & Image)");
+    if (!bannerForm.title || !bannerForm.image) return alert("Please fill title and image");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("title", bannerForm.title);
       formData.append("subtitle", bannerForm.subtitle);
       formData.append("link", bannerForm.link);
-      if (bannerForm.image) formData.append("image", bannerForm.image);
+      formData.append("image", bannerForm.image);
 
-      await axios.post("http://localhost:5000/api/banners", formData, {
+      await API.post("/banners", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-      alert("✅ Banner Added");
+      alert("✅ Banner Published");
       setBannerForm({ title: "", subtitle: "", link: "", image: null });
       setBannerPreview(null);
       fetchBanners();
     } catch (err) {
-      console.error("Banner Error:", err);
-      alert("Failed to create banner");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
-  };
-
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setForm({ ...form, images: [...form.images, ...files] });
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...previews]);
-  };
-
-  const removeImage = (index) => {
-    const newImages = [...form.images];
-    newImages.splice(index, 1);
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
-    setForm({ ...form, images: newImages });
-    setImagePreviews(newPreviews);
-  };
-
-  const addProduct = async () => {
-    const { title, mrpPrice, discountPrice, stock } = form;
-    if (!title || !mrpPrice || !discountPrice || !stock) return alert("Please fill required fields");
-    const token = localStorage.getItem("token");
-    if (!token) return alert("Login first - Token not found");
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      Object.keys(form).forEach(key => {
-        if (key === "images") {
-          form.images.forEach(img => formData.append("images", img));
-        } else {
-          formData.append(key, form[key]);
-        }
-      });
-      await axios.post("http://localhost:5000/api/products", formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
-      });
-      alert("✅ Product Added Successfully");
-      setForm({ 
-        title: "", 
-        description: "", 
-        mrpPrice: "", 
-        discountPrice: "", 
-        gst: "18", 
-        stock: "", 
-        category: "", 
-        images: [], 
-        isTrending: false, 
-        isFeatured: false,
-        isSubsidy: false // 🔥 RESET ADDED
-      });
-      setImagePreviews([]);
-      fetchProducts();
-    } catch (err) {
-      alert("Failed to add product");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to create banner");
     } finally {
       setLoading(false);
     }
@@ -412,102 +357,170 @@ export default function AdminDashboard() {
   const deleteProduct = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await API.delete(`/products/${id}`);
+      alert("Product Deleted");
       fetchProducts();
     } catch (err) {
-      alert("Failed to delete product");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to delete product");
     }
   };
 
   const deleteReview = async (id) => {
     if (!window.confirm("Delete this review?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/reviews/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await API.delete(`/reviews/${id}`);
       fetchReviews();
     } catch (err) {
-      alert("Failed to delete review");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to delete review");
     }
   };
 
   const deleteStory = async (id) => {
     if (!window.confirm("Delete this story?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/stories/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await API.delete(`/stories/${id}`);
       fetchStories();
     } catch (err) {
-      alert("Failed to delete story");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to delete story");
     }
   };
 
   const deleteBanner = async (id) => {
     if (!window.confirm("Delete this banner?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/banners/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await API.delete(`/banners/${id}`);
       fetchBanners();
     } catch (err) {
-      alert("Failed to delete banner");
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to delete banner");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setForm({ ...form, images: [...form.images, ...files] });
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews([...imagePreviews, ...previews]);
+  };
+
+  const removeImage = (index) => {
+    const updatedImages = form.images.filter((_, i) => i !== index);
+    const updatedPreviews = imagePreviews.filter((_, i) => i !== index);
+    setForm({ ...form, images: updatedImages });
+    setImagePreviews(updatedPreviews);
+  };
+
+  const addProduct = async () => {
+    if (!form.title || !form.mrpPrice || !form.category) {
+      return alert("Please fill required fields");
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => {
+        if (key === "images") {
+          form.images.forEach((image) => formData.append("images", image));
+        } else {
+          formData.append(key, form[key]);
+        }
+      });
+
+      await API.post("/products", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("✅ Product Added Successfully!");
+      setForm({
+        title: "",
+        description: "",
+        mrpPrice: "",
+        discountPrice: "",
+        gst: "18",
+        stock: "",
+        category: "",
+        images: [],
+        isTrending: false,
+        isFeatured: false,
+        isSubsidy: false,
+      });
+      setImagePreviews([]);
+      fetchProducts();
+    } catch (err) {
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to add product");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
       {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-100 flex flex-col sticky top-0 h-screen">
-        <div className="p-8 flex items-center gap-3">
+      <aside className="w-full lg:w-72 bg-white border-r border-slate-100 p-6 flex flex-col gap-8">
+        <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
-            <FiGrid size={20} />
+            <FiShoppingBag size={20} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Admin Panel</h1>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">Solar Admin</h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Control Panel</p>
+          </div>
         </div>
-        
-        <nav className="flex-grow px-4 space-y-2">
+
+        <nav className="flex flex-col gap-2">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Inventory</h3>
           <SidebarItem icon={FiPlus} label="Add Product" active={activeTab === "ADD_PRODUCT"} onClick={() => setActiveTab("ADD_PRODUCT")} />
-          <SidebarItem icon={FiShoppingBag} label="Products" active={activeTab === "PRODUCT_LIST"} onClick={() => setActiveTab("PRODUCT_LIST")} />
+          <SidebarItem icon={FiGrid} label="Product List" active={activeTab === "PRODUCT_LIST"} onClick={() => setActiveTab("PRODUCT_LIST")} />
           <SidebarItem icon={FiTag} label="Categories" active={activeTab === "CATEGORIES"} onClick={() => setActiveTab("CATEGORIES")} />
-          <SidebarItem icon={FiStar} label="Reviews" active={activeTab === "REVIEWS"} onClick={() => setActiveTab("REVIEWS")} />
-          <SidebarItem icon={FiFolderPlus} label="Stories" active={activeTab === "STORIES"} onClick={() => setActiveTab("STORIES")} />
+          
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mt-6 mb-2">Marketing</h3>
           <SidebarItem icon={FiImage} label="Banners" active={activeTab === "BANNERS"} onClick={() => setActiveTab("BANNERS")} />
+          <SidebarItem icon={FiStar} label="Reviews" active={activeTab === "REVIEWS"} onClick={() => setActiveTab("REVIEWS")} />
+          <SidebarItem icon={FiFolderPlus} label="Success Stories" active={activeTab === "STORIES"} onClick={() => setActiveTab("STORIES")} />
         </nav>
 
-        <div className="p-6 border-t border-slate-50">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 transition-colors font-semibold text-sm">
-            <FiLogOut size={18} />
-            Logout
+        <div className="mt-auto pt-6 border-t border-slate-50">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 group">
+            <FiLogOut size={18} className="group-hover:rotate-180 transition-transform duration-300" />
+            <span className="text-sm font-semibold">Logout</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow p-10 overflow-y-auto">
-        <header className="flex justify-between items-center mb-10">
+      <main className="flex-grow p-4 lg:p-10">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">
+            <h2 className="text-2xl font-bold text-slate-900">
               {activeTab.replace("_", " ")}
             </h2>
-            <p className="text-slate-400 font-medium mt-1">Manage your store operations efficiently</p>
+            <p className="text-sm text-slate-500 font-medium">Manage your store's inventory and content</p>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm">
+          <div className="flex items-center gap-3">
+            <button className="p-2.5 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50 transition-all relative">
               <FiBell size={20} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
             </button>
-            <div className="h-10 w-[1px] bg-slate-200 mx-2"></div>
-            <div className="flex items-center gap-3 bg-white p-2 pr-4 rounded-xl border border-slate-100 shadow-sm">
-              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                <FiUser size={18} />
+            <div className="h-10 w-[1px] bg-slate-200 mx-1"></div>
+            <div className="flex items-center gap-3 pl-1">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-slate-900">Admin User</p>
+                <p className="text-[10px] font-bold text-green-600 uppercase">Online</p>
               </div>
-              <span className="text-sm font-bold">Admin</span>
+              <div className="w-10 h-10 bg-slate-200 rounded-xl overflow-hidden border-2 border-white shadow-sm">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Admin" />
+              </div>
             </div>
           </div>
         </header>
@@ -516,8 +529,8 @@ export default function AdminDashboard() {
           {activeTab === "ADD_PRODUCT" && (
             <motion.div 
               key="add-product"
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="grid grid-cols-1 xl:grid-cols-12 gap-8"
             >
@@ -649,7 +662,7 @@ export default function AdminDashboard() {
                     <div key={cat._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden">
-                          {cat.image ? <img src={`http://localhost:5000/${cat.image}`} alt={cat.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><FiImage size={16} /></div>}
+                          {cat.image ? <img src={`${BASE_URL}/${cat.image?.replace(/\\/g, "/")}`} alt={cat.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><FiImage size={16} /></div>}
                         </div>
                         <span className="font-semibold text-slate-700">{cat.name}</span>
                       </div>
@@ -669,7 +682,7 @@ export default function AdminDashboard() {
                   <FormInput label="Customer Name" value={reviewForm.name} onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })} placeholder="John Doe" icon={FiUser} />
                   <FormInput label="Rating (1-5)" type="number" min="1" max="5" value={reviewForm.rating} onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })} icon={FiStar} />
                 </div>
-                <FormTextarea label="Review Message" value={reviewForm.message} onChange={(e) => setReviewForm({ ...reviewForm, message: e.target.value })} placeholder="What did the customer say?" rows={4} icon={FiFileText} />
+                <FormTextarea label="Review Message" value={reviewForm.message} onChange={(e) => setReviewForm({ ...reviewForm, message: e.target.value })} placeholder="Share customer feedback..." rows={3} icon={FiFileText} />
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 ml-1">Customer Image</label>
                   <div className="flex items-center gap-4">
@@ -695,7 +708,7 @@ export default function AdminDashboard() {
                     <button onClick={() => deleteReview(rev._id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><FiTrash2 size={16} /></button>
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100">
-                        {rev.image ? <img src={`http://localhost:5000/${rev.image}`} alt={rev.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiUser size={20} /></div>}
+                        {rev.image ? <img src={`${BASE_URL}/${rev.image?.replace(/\\/g, "/")}`} alt={rev.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiUser size={20} /></div>}
                       </div>
                       <div>
                         <h4 className="font-bold text-slate-900">{rev.name}</h4>
@@ -746,7 +759,7 @@ export default function AdminDashboard() {
                   <div key={story._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative">
                     <button onClick={() => deleteStory(story._id)} className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"><FiTrash2 size={14} /></button>
                     <div className="aspect-video bg-slate-100 relative">
-                      {story.image ? <img src={`http://localhost:5000/${story.image}`} alt={story.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
+                      {story.image ? <img src={`${BASE_URL}/${story.image?.replace(/\\/g, "/")}`} alt={story.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/50 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1"><FiMapPin size={10} /> {story.location}</div>
                     </div>
                     <div className="p-6">
@@ -798,7 +811,7 @@ export default function AdminDashboard() {
                   {banners.map(banner => (
                     <div key={banner._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative flex flex-col md:flex-row">
                       <div className="md:w-1/3 aspect-video md:aspect-auto bg-slate-100">
-                        {banner.image ? <img src={`http://localhost:5000/${banner.image}`} alt={banner.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
+                        {banner.image ? <img src={`${BASE_URL}/${banner.image?.replace(/\\/g, "/")}`} alt={banner.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       </div>
                       <div className="p-6 flex-grow flex flex-col justify-center">
                         <h4 className="text-xl font-bold text-slate-900 mb-1">{banner.title}</h4>
@@ -844,7 +857,7 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-100">
-                              {p.images && p.images[0] ? <img src={`http://localhost:5000/${p.images[0]}`} alt={p.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={16} /></div>}
+                              {p.images && p.images[0] ? <img src={`${BASE_URL}/${p.images[0]?.replace(/\\/g, "/")}`} alt={p.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={16} /></div>}
                             </div>
                             <div>
                               <div className="font-bold text-slate-900 text-sm">{p.title}</div>
