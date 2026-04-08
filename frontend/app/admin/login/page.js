@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import API from "../../services/api"; // ✅ FIX
 import { useRouter } from "next/navigation";
 
 export default function Login() {
@@ -11,10 +11,10 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password }
-      );
+      const res = await API.post("/auth/login", {
+        email,
+        password,
+      });
 
       localStorage.setItem("token", res.data.token);
 
@@ -22,7 +22,7 @@ export default function Login() {
       router.push("/admin/products");
 
     } catch (err) {
-      alert("Invalid Credentials");
+      alert(err.response?.data?.message || "Invalid Credentials");
     }
   };
 
