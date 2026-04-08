@@ -7,13 +7,21 @@ export default function Hero() {
   const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // ✅ API URL (ENV BASED)
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   // 🔥 FETCH FROM BACKEND
   useEffect(() => {
+    if (!API_URL) return;
+
     axios
-      .get("http://localhost:5000/api/banners")
-      .then((res) => setBanners(res.data))
+      .get(`${API_URL}/api/banners`)
+      .then((res) => {
+        console.log("Banners:", res.data); // debug
+        setBanners(res.data);
+      })
       .catch((err) => console.log("Banner Error:", err));
-  }, []);
+  }, [API_URL]);
 
   // 🔥 AUTO SLIDE
   useEffect(() => {
@@ -50,7 +58,7 @@ export default function Hero() {
             {/* LEFT IMAGE */}
             <div className="w-full md:w-3/5 relative">
               <img
-                src={`http://localhost:5000/${banner.image}`}
+                src={`${API_URL}/${banner.image}`}
                 alt="Banner"
                 className="w-full h-full object-cover"
               />
