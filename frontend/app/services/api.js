@@ -29,3 +29,9 @@ export default API;
 // ✅ APIs
 export const getProducts = () => API.get("/products");
 export const createProduct = (data) => API.post("/products", data);
+
+// 🔥 ADD THIS (IMPORTANT)
+export const getImageUrl = (path) => {
+  if (!path) return "";
+  return `${BASE_URL}/${path.replace(/\\/g, "/")}`;
+};

@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const BASE_URL = "http://localhost:5000";
+import API, { getImageUrl } from "../services/api"; // ✅ FIX
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(`${BASE_URL}/api/orders`)
-      .then((res) => setOrders(res.data))
+    API.get("/orders") // ✅ FIX
+      .then((res) => {
+        const data = res.data.orders || res.data || [];
+        setOrders(data);
+      })
       .catch((err) => console.log(err));
   }, []);
 
@@ -32,13 +32,9 @@ export default function OrdersPage() {
                 className="bg-white p-5 rounded-2xl shadow flex flex-col md:flex-row gap-6"
               >
 
-                {/* IMAGE */}
+                {/* ✅ IMAGE FIX */}
                 <img
-                  src={
-                    order.image
-                      ? `${BASE_URL}/${order.image}`
-                      : "/no-image.png"
-                  }
+                  src={getImageUrl(order.image)}
                   alt="product"
                   className="w-32 h-32 object-cover rounded-lg"
                 />
