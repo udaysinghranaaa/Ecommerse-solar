@@ -7,21 +7,23 @@ export default function Hero() {
   const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // ✅ API URL (ENV BASED)
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  // ✅ SAFE API URL (FIX)
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://ecommerse-solar.onrender.com";
 
-  // 🔥 FETCH FROM BACKEND
+  // 🔥 FETCH FROM BACKEND (FIXED DATA FORMAT)
   useEffect(() => {
-    if (!API_URL) return;
-
     axios
       .get(`${API_URL}/api/banners`)
       .then((res) => {
-        console.log("Banners:", res.data); // debug
-        setBanners(res.data);
+        console.log("Banners:", res.data);
+
+        const data = res.data.banners || res.data || [];
+        setBanners(data);
       })
       .catch((err) => console.log("Banner Error:", err));
-  }, [API_URL]);
+  }, []);
 
   // 🔥 AUTO SLIDE
   useEffect(() => {
@@ -34,10 +36,11 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, [banners]);
 
+  // ✅ EMPTY STATE FIX
   if (banners.length === 0) {
     return (
       <div className="h-[400px] flex items-center justify-center text-gray-400">
-        Loading banners...
+        No banners available
       </div>
     );
   }
@@ -58,7 +61,7 @@ export default function Hero() {
             {/* LEFT IMAGE */}
             <div className="w-full md:w-3/5 relative">
               <img
-                src={`${API_URL}/${banner.image}`}
+                src={`${API_URL}/${banner.image?.replace(/\\/g, "/")}`} // ✅ IMAGE FIX
                 alt="Banner"
                 className="w-full h-full object-cover"
               />

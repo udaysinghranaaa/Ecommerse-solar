@@ -27,7 +27,7 @@ export default function Navbar({ categories }) {
     { label: "Subsidy", href: "/subsidy" },
     { label: "Category", href: "#", hasDropdown: true },
     { label: "About Us", href: "/about" },
-    { label: "Contact Us", href: "/contact" }, // ✅ FIXED
+    { label: "Contact Us", href: "/contact" },
   ];
 
   return (
@@ -35,7 +35,6 @@ export default function Navbar({ categories }) {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
 
-          {/* 🔥 LOGO */}
           <div
             onClick={() => router.push("/")}
             className="flex items-center cursor-pointer"
@@ -49,7 +48,6 @@ export default function Navbar({ categories }) {
             />
           </div>
 
-          {/* 🔥 DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-6">
 
             {navLinks.map((link, index) => (
@@ -69,12 +67,12 @@ export default function Navbar({ categories }) {
                   {link.hasDropdown && <ChevronDown size={16} />}
                 </button>
 
-                {/* 🔥 CATEGORY DROPDOWN */}
+                {/* 🔥 FIXED SAFE MAP */}
                 {link.hasDropdown && (
                   <div className="absolute top-10 w-56 bg-white shadow-xl rounded-xl hidden group-hover:block z-50 border">
 
                     {categories?.length > 0 ? (
-                      categories.map((cat) => (
+                      categories?.map((cat) => (
                         <div
                           key={cat._id}
                           onClick={() =>
@@ -96,7 +94,6 @@ export default function Navbar({ categories }) {
               </div>
             ))}
 
-            {/* 🔥 SEARCH */}
             <div className="flex items-center border rounded-xl px-3 py-1">
               <Search size={18} />
               <input
@@ -113,7 +110,6 @@ export default function Navbar({ categories }) {
               />
             </div>
 
-            {/* 🔥 CART */}
             <button
               onClick={() => router.push("/cart")}
               className="hover:text-green-600"
@@ -121,7 +117,6 @@ export default function Navbar({ categories }) {
               <ShoppingCart size={22} />
             </button>
 
-            {/* 🔥 CALL */}
             <a
               href="tel:9358622621"
               className="flex items-center gap-1 bg-green-600 text-white px-4 py-1.5 rounded-xl text-sm hover:bg-green-700"
@@ -130,7 +125,6 @@ export default function Navbar({ categories }) {
               Call
             </a>
 
-            {/* 🔥 CONTACT BUTTON (NEW UI) */}
             <button
               onClick={() => router.push("/contact")}
               className="flex items-center gap-1 bg-blue-600 text-white px-4 py-1.5 rounded-xl text-sm hover:bg-blue-700"
@@ -140,7 +134,6 @@ export default function Navbar({ categories }) {
             </button>
           </div>
 
-          {/* 🔥 MOBILE MENU BUTTON */}
           <div className="md:hidden">
             <button onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X /> : <Menu />}
@@ -148,7 +141,6 @@ export default function Navbar({ categories }) {
           </div>
         </div>
 
-        {/* 🔥 MOBILE MENU */}
         {isOpen && (
           <div className="md:hidden flex flex-col space-y-2 pb-4">
 
@@ -169,7 +161,7 @@ export default function Navbar({ categories }) {
                   {link.hasDropdown && <ChevronDown size={16} />}
                 </button>
 
-                {/* MOBILE CATEGORY */}
+                {/* 🔥 FIX SAFE MAP */}
                 {link.hasDropdown && showMobileCategories && (
                   <div className="pl-4">
                     {categories?.map((cat) => (
@@ -189,7 +181,6 @@ export default function Navbar({ categories }) {
               </div>
             ))}
 
-            {/* SEARCH */}
             <div className="flex items-center border rounded-lg px-2 mx-3">
               <Search size={18} />
               <input
@@ -205,7 +196,6 @@ export default function Navbar({ categories }) {
               />
             </div>
 
-            {/* CART + CALL + CONTACT */}
             <div className="flex justify-between items-center px-3 mt-2 gap-2">
 
               <button onClick={() => router.push("/cart")}>

@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "../../components/ProductCard";
 
-// ✅ ENV URL
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+// ✅ SAFE BASE URL
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ecommerse-solar.onrender.com";
+
 export default function ShopContent() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -18,43 +21,44 @@ export default function ShopContent() {
 
   // 🔥 FETCH CATEGORIES
   useEffect(() => {
-    axios
-      .get(`${BASE_URL}/api/category`)
+    API.get("/category") // ✅ FIX
       .then((res) => {
         const data =
           res.data.categories || (Array.isArray(res.data) ? res.data : []);
         setCategories(data);
-      });
+      })
+      .catch((err) => console.log(err));
   }, []);
 
   // 🔥 FETCH PRODUCTS
   useEffect(() => {
-    let url = `${BASE_URL}/api/products`;
+    let url = "/products";
 
     if (selectedCategory) {
-      url = `${BASE_URL}/api/products/category/${selectedCategory}`;
+      url = `/products/category/${selectedCategory}`;
     }
 
-    axios.get(url).then((res) => {
-      let data =
-        res.data.products || (Array.isArray(res.data) ? res.data : []);
+    API.get(url) // ✅ FIX
+      .then((res) => {
+        let data =
+          res.data.products || (Array.isArray(res.data) ? res.data : []);
 
-      // 🔍 SEARCH FILTER
-      if (searchQuery) {
-        data = data.filter((p) =>
-          p.title.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
+        // 🔍 SEARCH FILTER
+        if (searchQuery) {
+          data = data.filter((p) =>
+            p.title.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
 
-      setProducts(data);
-    });
+        setProducts(data);
+      })
+      .catch((err) => console.log(err));
   }, [selectedCategory, searchQuery]);
 
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* HEADER */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
             Explore Solar Products
@@ -64,7 +68,6 @@ export default function ShopContent() {
           </p>
         </div>
 
-        {/* CATEGORY FILTER */}
         <div className="flex gap-3 overflow-x-auto mb-10 pb-2">
 
           <button
@@ -93,7 +96,6 @@ export default function ShopContent() {
           ))}
         </div>
 
-        {/* PRODUCTS GRID */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
           {products.length > 0 ? (

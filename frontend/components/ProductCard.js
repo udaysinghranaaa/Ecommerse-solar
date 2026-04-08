@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { FiPackage, FiShoppingCart } from "react-icons/fi";
 import { motion } from "framer-motion";
 
-const BASE_URL = "http://localhost:5000";
+// ✅ FIXED BASE URL
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ecommerse-solar.onrender.com";
 
 const ProductCard = ({ product }) => {
   const router = useRouter();
@@ -17,10 +20,10 @@ const ProductCard = ({ product }) => {
     const firstImage = product.images[0];
 
     if (typeof firstImage === "object" && firstImage.url) {
-      return `${BASE_URL}/${firstImage.url}`;
+      return `${BASE_URL}/${firstImage.url.replace(/\\/g, "/")}`;
     }
 
-    return `${BASE_URL}/${firstImage}`;
+    return `${BASE_URL}/${firstImage.replace(/\\/g, "/")}`;
   };
 
   const imageUrl = getImageUrl();
