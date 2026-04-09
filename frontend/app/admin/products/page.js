@@ -8,7 +8,7 @@ import {
   FiImage, FiType, FiFileText, FiDollarSign, FiPercent, FiBox, 
   FiTag, FiTrash2, FiEdit3, FiEye, FiChevronRight, FiUploadCloud,
   FiSearch, FiBell, FiUser, FiX, FiCheck, FiFolderPlus, FiTrendingUp, FiHeart,
-  FiMapPin, FiVideo, FiUserCheck, FiExternalLink
+  FiMapPin, FiVideo, FiUserCheck, FiExternalLink, FiFilter
 } from "react-icons/fi";
 
 // --- Reusable UI Components ---
@@ -88,6 +88,11 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ SEARCH STATE
+
+  // ✅ EDIT MODE STATE
+  const [editMode, setEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
   
   // Category State
   const [categoryName, setCategoryName] = useState("");
@@ -327,8 +332,9 @@ export default function AdminDashboard() {
     }
   };
 
+  // 🔥 CREATE BANNER
   const createBanner = async () => {
-    if (!bannerForm.title || !bannerForm.image) return alert("Please fill title and image");
+    if (!bannerForm.title || !bannerForm.image) return alert("Please fill required fields");
     setLoading(true);
     try {
       const formData = new FormData();
@@ -342,7 +348,7 @@ export default function AdminDashboard() {
           "Content-Type": "multipart/form-data",
         },
       });
-      alert("✅ Banner Published");
+      alert("✅ Banner Added");
       setBannerForm({ title: "", subtitle: "", link: "", image: null });
       setBannerPreview(null);
       fetchBanners();
@@ -354,83 +360,35 @@ export default function AdminDashboard() {
     }
   };
 
-  const deleteProduct = async (id) => {
-    if (!window.confirm("Are you sure?")) return;
-    try {
-      await API.delete(`/products/${id}`);
-      alert("Product Deleted");
-      fetchProducts();
-    } catch (err) {
-      // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to delete product");
-    }
-  };
-
-  const deleteReview = async (id) => {
-    if (!window.confirm("Delete this review?")) return;
-    try {
-      await API.delete(`/reviews/${id}`);
-      fetchReviews();
-    } catch (err) {
-      // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to delete review");
-    }
-  };
-
-  const deleteStory = async (id) => {
-    if (!window.confirm("Delete this story?")) return;
-    try {
-      await API.delete(`/stories/${id}`);
-      fetchStories();
-    } catch (err) {
-      // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to delete story");
-    }
-  };
-
-  const deleteBanner = async (id) => {
-    if (!window.confirm("Delete this banner?")) return;
-    try {
-      await API.delete(`/banners/${id}`);
-      fetchBanners();
-    } catch (err) {
-      // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to delete banner");
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setForm({ ...form, images: [...form.images, ...files] });
-    const previews = files.map((file) => URL.createObjectURL(file));
+    const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews([...imagePreviews, ...previews]);
   };
 
   const removeImage = (index) => {
-    const updatedImages = form.images.filter((_, i) => i !== index);
-    const updatedPreviews = imagePreviews.filter((_, i) => i !== index);
-    setForm({ ...form, images: updatedImages });
-    setImagePreviews(updatedPreviews);
+    const newImages = [...form.images];
+    newImages.splice(index, 1);
+    const newPreviews = [...imagePreviews];
+    newPreviews.splice(index, 1);
+    setForm({ ...form, images: newImages });
+    setImagePreviews(newPreviews);
   };
 
   const addProduct = async () => {
-    if (!form.title || !form.mrpPrice || !form.category) {
-      return alert("Please fill required fields");
-    }
+    if (!form.title || !form.category) return alert("Please fill required fields");
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.keys(form).forEach((key) => {
+      Object.keys(form).forEach(key => {
         if (key === "images") {
-          form.images.forEach((image) => formData.append("images", image));
+          form.images.forEach(img => formData.append("images", img));
         } else {
           formData.append(key, form[key]);
         }
@@ -439,22 +397,8 @@ export default function AdminDashboard() {
       await API.post("/products", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      alert("✅ Product Added Successfully!");
-      setForm({
-        title: "",
-        description: "",
-        mrpPrice: "",
-        discountPrice: "",
-        gst: "18",
-        stock: "",
-        category: "",
-        images: [],
-        isTrending: false,
-        isFeatured: false,
-        isSubsidy: false,
-      });
-      setImagePreviews([]);
+      alert("✅ Product Added Successfully");
+      resetForm();
       fetchProducts();
     } catch (err) {
       // ✅ FIX 3: Improved error handling
@@ -464,36 +408,187 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleEdit = (product) => {
+    setEditMode(true);
+    setEditId(product._id);
+    setForm({
+      title: product.title,
+      description: product.description,
+      mrpPrice: product.mrpPrice,
+      discountPrice: product.discountPrice,
+      gst: product.gst || "18",
+      stock: product.stock,
+      category: typeof product.category === "object" ? product.category._id : product.category,
+      images: [], // Reset images for update
+      isTrending: product.isTrending || false,
+      isFeatured: product.isFeatured || false,
+      isSubsidy: product.isSubsidy || false,
+    });
+    
+    // Set previews from existing images
+    const existingPreviews = product.images.map(img => 
+      typeof img === "string" 
+        ? img.startsWith("http") ? img : `${BASE_URL}/${img.replace(/\\/g, "/")}`
+        : img.url ? `${BASE_URL}/${img.url}` : ""
+    );
+    setImagePreviews(existingPreviews);
+    setActiveTab("ADD_PRODUCT");
+  };
+
+  const updateProduct = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      Object.keys(form).forEach(key => {
+        if (key === "images") {
+          form.images.forEach(img => formData.append("images", img));
+        } else {
+          formData.append(key, form[key]);
+        }
+      });
+
+      await API.put(`/products/${editId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert("✅ Product Updated Successfully");
+      resetForm();
+      fetchProducts();
+    } catch (err) {
+      // ✅ FIX 3: Improved error handling
+      alert(err.response?.data?.message || "Failed to update product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      title: "",
+      description: "",
+      mrpPrice: "",
+      discountPrice: "",
+      gst: "18",
+      stock: "",
+      category: "",
+      images: [],
+      isTrending: false,
+      isFeatured: false,
+      isSubsidy: false,
+    });
+    setImagePreviews([]);
+    setEditMode(false);
+    setEditId(null);
+  };
+
+  const deleteProduct = async (id) => {
+    if (!window.confirm("Delete this product?")) return;
+    try {
+      await API.delete(`/products/${id}`);
+      fetchProducts();
+    } catch (err) {
+      alert("Failed to delete product");
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    if (!window.confirm("Delete this category?")) return;
+    try {
+      await API.delete(`/category/${id}`);
+      fetchCategories();
+    } catch (err) {
+      alert("Failed to delete category");
+    }
+  };
+
+  const deleteReview = async (id) => {
+    if (!window.confirm("Delete this review?")) return;
+    try {
+      await API.delete(`/reviews/${id}`);
+      fetchReviews();
+    } catch (err) {
+      alert("Failed to delete review");
+    }
+  };
+
+  const deleteStory = async (id) => {
+    if (!window.confirm("Delete this story?")) return;
+    try {
+      await API.delete(`/stories/${id}`);
+      fetchStories();
+    } catch (err) {
+      alert("Failed to delete story");
+    }
+  };
+
+  const deleteBanner = async (id) => {
+    if (!window.confirm("Delete this banner?")) return;
+
+    try {
+      console.log("🗑️ DELETE ID:", id);
+
+      const res = await API.delete(`/banners/${id}`);
+      console.log("✅ SUCCESS:", res.data);
+
+      alert("Banner Deleted ✅");
+      fetchBanners();
+
+    } catch (err) {
+      console.error("❌ DELETE ERROR:", err.response?.data || err.message);
+
+      alert(
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to delete banner"
+      );
+    }
+  };
+
+  // ✅ HELPER: GET CATEGORY NAME (FIXES UNCATEGORIZED)
+  const getCategoryName = (product) => {
+    if (typeof product.category === "object" && product.category?.name) {
+      return product.category.name;
+    }
+    const cat = categories.find(c => c._id === product.category);
+    return cat ? cat.name : "Uncategorized";
+  };
+
+  // ✅ SEARCH FILTER LOGIC
+  const filteredProducts = products.filter(p => 
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getCategoryName(p).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Sidebar */}
-      <aside className="w-full lg:w-72 bg-white border-r border-slate-100 p-6 flex flex-col gap-8">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
-            <FiShoppingBag size={20} />
+      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col sticky top-0 h-screen hidden lg:flex">
+        <div className="p-8 border-b border-slate-50">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+              <FiShoppingBag size={20} />
+            </div>
+            <h1 className="text-xl font-black tracking-tight text-slate-900">SOLAR<span className="text-blue-600">ADMIN</span></h1>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">Solar Admin</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Control Panel</p>
-          </div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Store Management v2.0</p>
         </div>
 
-        <nav className="flex flex-col gap-2">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Inventory</h3>
+        <nav className="flex-grow p-6 space-y-2 overflow-y-auto">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-4">Main Menu</p>
           <SidebarItem icon={FiPlus} label="Add Product" active={activeTab === "ADD_PRODUCT"} onClick={() => setActiveTab("ADD_PRODUCT")} />
-          <SidebarItem icon={FiGrid} label="Product List" active={activeTab === "PRODUCT_LIST"} onClick={() => setActiveTab("PRODUCT_LIST")} />
+          <SidebarItem icon={FiGrid} label="All Products" active={activeTab === "PRODUCT_LIST"} onClick={() => setActiveTab("PRODUCT_LIST")} />
           <SidebarItem icon={FiTag} label="Categories" active={activeTab === "CATEGORIES"} onClick={() => setActiveTab("CATEGORIES")} />
           
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mt-6 mb-2">Marketing</h3>
-          <SidebarItem icon={FiImage} label="Banners" active={activeTab === "BANNERS"} onClick={() => setActiveTab("BANNERS")} />
+          <div className="my-6 h-[1px] bg-slate-50"></div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-4">Content</p>
           <SidebarItem icon={FiStar} label="Reviews" active={activeTab === "REVIEWS"} onClick={() => setActiveTab("REVIEWS")} />
-          <SidebarItem icon={FiFolderPlus} label="Success Stories" active={activeTab === "STORIES"} onClick={() => setActiveTab("STORIES")} />
+          <SidebarItem icon={FiFolderPlus} label="Stories" active={activeTab === "STORIES"} onClick={() => setActiveTab("STORIES")} />
+          <SidebarItem icon={FiImage} label="Banners" active={activeTab === "BANNERS"} onClick={() => setActiveTab("BANNERS")} />
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-slate-50">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 group">
-            <FiLogOut size={18} className="group-hover:rotate-180 transition-transform duration-300" />
-            <span className="text-sm font-semibold">Logout</span>
+        <div className="p-6 border-t border-slate-50">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all font-semibold text-sm">
+            <FiLogOut size={18} />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -593,8 +688,8 @@ export default function AdminDashboard() {
                     <input type="file" multiple ref={fileInputRef} className="hidden" onChange={handleImageChange} accept="image/*" />
                   </div>
 
-                  <button onClick={addProduct} disabled={loading} className="w-full py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-                    {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><FiCheck size={18} /> Create Product</>}
+                  <button onClick={editMode ? updateProduct : addProduct} disabled={loading} className="w-full py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : (editMode ? "Update Product" : "Publish Product")}
                   </button>
                 </div>
               </div>
@@ -625,6 +720,104 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "PRODUCT_LIST" && (
+            <motion.div key="product-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
+                <div className="relative w-full sm:w-96">
+                  <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search by name or category..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition-all" 
+                  />
+                </div>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <button className="flex-grow sm:flex-grow-0 px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"><FiFilter size={14}/> Filters</button>
+                  <button className="flex-grow sm:flex-grow-0 px-4 py-3 bg-blue-600 rounded-xl text-xs font-bold text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-100">Export CSV</button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Product Info</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pricing</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Badges</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredProducts.map((p) => (
+                      <tr key={p._id} className="hover:bg-blue-50/30 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm flex-shrink-0">
+                              {p.images && p.images[0] ? (
+                                <img 
+                                  src={
+                                    typeof p.images[0] === "string"
+                                      ? p.images[0].startsWith("http") ? p.images[0] : `${BASE_URL}/${p.images[0].replace(/\\/g, "/")}`
+                                      : p.images[0]?.url ? `${BASE_URL}/${p.images[0].url}` : ""
+                                  } 
+                                  alt={p.title} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={20} /></div>}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm mb-0.5">{p.title}</div>
+                              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">ID: {p._id.slice(-6)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-100 uppercase">
+                            {getCategoryName(p)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-black text-slate-900">₹{p.discountPrice}</div>
+                          <div className="text-[10px] text-slate-400 line-through font-bold">₹{p.mrpPrice}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <div className={`text-xs font-black ${p.stock < 10 ? 'text-red-500' : 'text-slate-700'}`}>{p.stock} Units</div>
+                            <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${p.stock < 10 ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${Math.min(p.stock, 100)}%` }}></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-1.5">
+                            {p.isTrending && <span title="Trending" className="w-7 h-7 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100"><FiTrendingUp size={14} /></span>}
+                            {p.isFeatured && <span title="Featured" className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center border border-red-100"><FiHeart size={14} /></span>}
+                            {p.isSubsidy && <span title="Subsidy" className="w-7 h-7 rounded-lg bg-green-50 text-green-500 flex items-center justify-center border border-green-100"><FiCheck size={14} /></span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                            <button onClick={() => handleEdit(p)} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl border border-transparent hover:border-blue-100 transition-all"><FiEdit3 size={16} /></button>
+                            <button onClick={() => deleteProduct(p._id)} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 transition-all"><FiTrash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredProducts.length === 0 && (
+                  <div className="p-20 flex flex-col items-center justify-center text-slate-400">
+                    <FiSearch size={48} className="mb-4 opacity-20" />
+                    <p className="font-bold">No products found matching "{searchTerm}"</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -662,11 +855,26 @@ export default function AdminDashboard() {
                     <div key={cat._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden">
-                          {cat.image ? <img src={`${BASE_URL}/${cat.image?.replace(/\\/g, "/")}`} alt={cat.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><FiImage size={16} /></div>}
+                          {cat.image ? (
+                            <img 
+                              src={
+                                typeof cat.image === "string"
+                                  ? cat.image.startsWith("http") ? cat.image : `${BASE_URL}/${cat.image.replace(/\\/g, "/")}`
+                                  : cat.image?.url ? `${BASE_URL}/${cat.image.url}` : ""
+                              } 
+                              alt={cat.name} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><FiImage size={16} /></div>}
                         </div>
                         <span className="font-semibold text-slate-700">{cat.name}</span>
                       </div>
-                      <button className="text-slate-400 hover:text-red-500 transition-colors"><FiTrash2 size={16} /></button>
+                      <button 
+                        onClick={() => deleteCategory(cat._id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -708,7 +916,17 @@ export default function AdminDashboard() {
                     <button onClick={() => deleteReview(rev._id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><FiTrash2 size={16} /></button>
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100">
-                        {rev.image ? <img src={`${BASE_URL}/${rev.image?.replace(/\\/g, "/")}`} alt={rev.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiUser size={20} /></div>}
+                        {rev.image ? (
+                          <img 
+                            src={
+                              typeof rev.image === "string"
+                                ? rev.image.startsWith("http") ? rev.image : `${BASE_URL}/${rev.image.replace(/\\/g, "/")}`
+                                : rev.image?.url ? `${BASE_URL}/${rev.image.url}` : ""
+                            } 
+                            alt={rev.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiUser size={20} /></div>}
                       </div>
                       <div>
                         <h4 className="font-bold text-slate-900">{rev.name}</h4>
@@ -759,7 +977,17 @@ export default function AdminDashboard() {
                   <div key={story._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative">
                     <button onClick={() => deleteStory(story._id)} className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"><FiTrash2 size={14} /></button>
                     <div className="aspect-video bg-slate-100 relative">
-                      {story.image ? <img src={`${BASE_URL}/${story.image?.replace(/\\/g, "/")}`} alt={story.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
+                      {story.image ? (
+                        <img 
+                          src={
+                            typeof story.image === "string"
+                              ? story.image.startsWith("http") ? story.image : `${BASE_URL}/${story.image.replace(/\\/g, "/")}`
+                              : story.image?.url ? `${BASE_URL}/${story.image.url}` : ""
+                          } 
+                          alt={story.title} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/50 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1"><FiMapPin size={10} /> {story.location}</div>
                     </div>
                     <div className="p-6">
@@ -811,7 +1039,17 @@ export default function AdminDashboard() {
                   {banners.map(banner => (
                     <div key={banner._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative flex flex-col md:flex-row">
                       <div className="md:w-1/3 aspect-video md:aspect-auto bg-slate-100">
-                        {banner.image ? <img src={`${BASE_URL}/${banner.image?.replace(/\\/g, "/")}`} alt={banner.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
+                        {banner.image ? (
+                          <img 
+                            src={
+                              typeof banner.image === "string"
+                                ? banner.image.startsWith("http") ? banner.image : `${BASE_URL}/${banner.image.replace(/\\/g, "/")}`
+                                : banner.image?.url ? `${BASE_URL}/${banner.image.url}` : ""
+                            } 
+                            alt={banner.title} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       </div>
                       <div className="p-6 flex-grow flex flex-col justify-center">
                         <h4 className="text-xl font-bold text-slate-900 mb-1">{banner.title}</h4>
@@ -824,74 +1062,6 @@ export default function AdminDashboard() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "PRODUCT_LIST" && (
-            <motion.div key="product-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                <div className="relative w-72">
-                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="text" placeholder="Search products..." className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600 transition-all" />
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">Export CSV</button>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Product</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {products.map((p) => (
-                      <tr key={p._id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-100">
-                              {p.images && p.images[0] ? <img src={`${BASE_URL}/${p.images[0]?.replace(/\\/g, "/")}`} alt={p.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={16} /></div>}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900 text-sm">{p.title}</div>
-                              <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">ID: {p._id.slice(-6)}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{categories.find(c => c._id === p.category)?.name || "Uncategorized"}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-bold text-slate-900">₹{p.discountPrice}</div>
-                          <div className="text-[10px] text-slate-400 line-through">₹{p.mrpPrice}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className={`text-xs font-bold ${p.stock < 10 ? 'text-red-500' : 'text-slate-600'}`}>{p.stock} Units</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-1">
-                            {p.isTrending && <span title="Trending" className="w-6 h-6 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center"><FiTrendingUp size={12} /></span>}
-                            {p.isFeatured && <span title="Featured" className="w-6 h-6 rounded-full bg-red-50 text-red-500 flex items-center justify-center"><FiHeart size={12} /></span>}
-                            {p.isSubsidy && <span title="Subsidy" className="w-6 h-6 rounded-full bg-green-50 text-green-500 flex items-center justify-center"><FiCheck size={12} /></span>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><FiEdit3 size={16} /></button>
-                            <button onClick={() => deleteProduct(p._id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><FiTrash2 size={16} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </motion.div>
           )}
