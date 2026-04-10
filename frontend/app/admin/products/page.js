@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import API from "../../services/api";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FiPlus, FiGrid, FiShoppingBag, FiStar, FiSettings, FiLogOut, 
-  FiImage, FiType, FiFileText, FiDollarSign, FiPercent, FiBox, 
+import {
+  FiPlus, FiGrid, FiShoppingBag, FiStar, FiSettings, FiLogOut,
+  FiImage, FiType, FiFileText, FiDollarSign, FiPercent, FiBox,
   FiTag, FiTrash2, FiEdit3, FiEye, FiChevronRight, FiUploadCloud,
   FiSearch, FiBell, FiUser, FiX, FiCheck, FiFolderPlus, FiTrendingUp, FiHeart,
   FiMapPin, FiVideo, FiUserCheck, FiExternalLink, FiFilter
@@ -17,8 +18,8 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-xl ${
-      active 
-        ? "bg-blue-600 text-white shadow-md shadow-blue-100" 
+      active
+        ? "bg-blue-600 text-white shadow-md shadow-blue-100"
         : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
     }`}
   >
@@ -66,12 +67,12 @@ const FormCheckbox = ({ label, icon: Icon, name, checked, onChange }) => (
     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${checked ? 'bg-blue-600 border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}>
       {checked && <FiCheck size={14} className="text-white" />}
     </div>
-    <input 
-      type="checkbox" 
-      name={name} 
-      checked={checked} 
-      onChange={onChange} 
-      className="hidden" 
+    <input
+      type="checkbox"
+      name={name}
+      checked={checked}
+      onChange={onChange}
+      className="hidden"
     />
     <div className="flex items-center gap-2">
       {Icon && <Icon size={16} className={checked ? 'text-blue-600' : 'text-slate-400'} />}
@@ -81,9 +82,11 @@ const FormCheckbox = ({ label, icon: Icon, name, checked, onChange }) => (
 );
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
   // ✅ FIX 1: BASE_URL safety
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ecommerse-solar.onrender.com";
-  
+
   const [activeTab, setActiveTab] = useState("ADD_PRODUCT");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -93,7 +96,7 @@ export default function AdminDashboard() {
   // ✅ EDIT MODE STATE
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
-  
+
   // Category State
   const [categoryName, setCategoryName] = useState("");
   const [categoryImage, setCategoryImage] = useState(null);
@@ -153,12 +156,26 @@ export default function AdminDashboard() {
   const bannerImageInputRef = useRef(null);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    fetchReviews();
-    fetchStories();
-    fetchBanners(); // 🔥 ADD
-  }, []);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // If no token is found, redirect to the login page.
+      // This ensures that the admin dashboard is protected and cannot be accessed directly without authentication.
+      router.replace("/admin/login");
+    } else {
+      // If a token is found, proceed to fetch data for the dashboard.
+      fetchProducts();
+      fetchCategories();
+      fetchReviews();
+      fetchStories();
+      fetchBanners();
+      setIsAuthChecked(true);
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/admin/login");
+  };
 
   const fetchProducts = async () => {
     try {
@@ -304,7 +321,7 @@ export default function AdminDashboard() {
   };
 
   const createStory = async () => {
-    if (!storyForm.name || !storyForm.title || !storyForm.description) return alert("Please fill required fields");
+    if (!storyForm.name || !storyForm.title || !storyForm.description || !storyForm.location) return alert("Please fill all required fields");
     setLoading(true);
     try {
       const formData = new FormData();
@@ -312,7 +329,7 @@ export default function AdminDashboard() {
       formData.append("title", storyForm.title);
       formData.append("description", storyForm.description);
       formData.append("location", storyForm.location);
-      formData.append("video", storyForm.video);
+      if (storyForm.video) formData.append("video", storyForm.video);
       if (storyForm.image) formData.append("image", storyForm.image);
 
       await API.post("/stories", formData, {
@@ -320,21 +337,20 @@ export default function AdminDashboard() {
           "Content-Type": "multipart/form-data",
         },
       });
-      alert("✅ Story Added");
+      alert("✅ Story Saved");
       setStoryForm({ name: "", title: "", description: "", location: "", video: "", image: null });
       setStoryPreview(null);
       fetchStories();
     } catch (err) {
       // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to create story");
+      alert(err.response?.data?.message || "Failed to save story");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 CREATE BANNER
   const createBanner = async () => {
-    if (!bannerForm.title || !bannerForm.image) return alert("Please fill required fields");
+    if (!bannerForm.title || !bannerForm.subtitle || !bannerForm.link || !bannerForm.image) return alert("Please fill all banner fields and upload an image");
     setLoading(true);
     try {
       const formData = new FormData();
@@ -348,64 +364,79 @@ export default function AdminDashboard() {
           "Content-Type": "multipart/form-data",
         },
       });
-      alert("✅ Banner Added");
+      alert("✅ Banner Published");
       setBannerForm({ title: "", subtitle: "", link: "", image: null });
       setBannerPreview(null);
       fetchBanners();
     } catch (err) {
-      // ✅ FIX 3: Improved error handling
-      alert(err.response?.data?.message || "Failed to create banner");
+      alert(err.response?.data?.message || "Failed to publish banner");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
-  };
-
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setForm({ ...form, images: [...form.images, ...files] });
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...previews]);
-  };
-
-  const removeImage = (index) => {
-    const newImages = [...form.images];
-    newImages.splice(index, 1);
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
-    setForm({ ...form, images: newImages });
-    setImagePreviews(newPreviews);
-  };
-
   const addProduct = async () => {
-    if (!form.title || !form.category) return alert("Please fill required fields");
+    if (!form.title || !form.description || !form.mrpPrice || !form.discountPrice || !form.stock || !form.category || form.images.length === 0) {
+      return alert("Please fill all product fields and upload at least one image.");
+    }
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.keys(form).forEach(key => {
+      for (const key in form) {
         if (key === "images") {
-          form.images.forEach(img => formData.append("images", img));
+          form.images.forEach((image) => formData.append("images", image));
         } else {
           formData.append(key, form[key]);
         }
-      });
+      }
 
       await API.post("/products", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
       alert("✅ Product Added Successfully");
-      resetForm();
+      setForm({
+        title: "",
+        description: "",
+        mrpPrice: "",
+        discountPrice: "",
+        gst: "18",
+        stock: "",
+        category: "",
+        images: [],
+        isTrending: false,
+        isFeatured: false,
+        isSubsidy: false,
+      });
+      setImagePreviews([]);
       fetchProducts();
     } catch (err) {
-      // ✅ FIX 3: Improved error handling
       alert(err.response?.data?.message || "Failed to add product");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImagePreviews(files.map((file) => URL.createObjectURL(file)));
+    setForm({ ...form, images: files });
+  };
+
+  const removeImage = (index) => {
+    const newImages = form.images.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setForm({ ...form, images: newImages });
+    setImagePreviews(newPreviews);
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleEdit = (product) => {
@@ -416,74 +447,69 @@ export default function AdminDashboard() {
       description: product.description,
       mrpPrice: product.mrpPrice,
       discountPrice: product.discountPrice,
-      gst: product.gst || "18",
+      gst: product.gst,
       stock: product.stock,
-      category: typeof product.category === "object" ? product.category._id : product.category,
-      images: [], // Reset images for update
-      isTrending: product.isTrending || false,
-      isFeatured: product.isFeatured || false,
-      isSubsidy: product.isSubsidy || false,
+      category: product.category._id || product.category,
+      images: [], // Images are handled separately, not pre-filled for edit
+      isTrending: product.isTrending,
+      isFeatured: product.isFeatured,
+      isSubsidy: product.isSubsidy,
     });
-    
-    // Set previews from existing images
-    const existingPreviews = product.images.map(img => 
-      typeof img === "string" 
-        ? img.startsWith("http") ? img : `${BASE_URL}/${img.replace(/\\/g, "/")}`
-        : img.url ? `${BASE_URL}/${img.url}` : ""
-    );
-    setImagePreviews(existingPreviews);
+    setImagePreviews(product.images.map(img => typeof img === 'string' ? img.startsWith('http') ? img : `${BASE_URL}/${img.replace(/\\/g, '/')}` : img.url ? `${BASE_URL}/${img.url}` : ''));
     setActiveTab("ADD_PRODUCT");
   };
 
   const updateProduct = async () => {
+    if (!form.title || !form.description || !form.mrpPrice || !form.discountPrice || !form.stock || !form.category) {
+      return alert("Please fill all product fields.");
+    }
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.keys(form).forEach(key => {
+      for (const key in form) {
         if (key === "images") {
-          form.images.forEach(img => formData.append("images", img));
+          form.images.forEach((image) => formData.append("images", image));
         } else {
           formData.append(key, form[key]);
         }
-      });
+      }
 
       await API.put(`/products/${editId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
       alert("✅ Product Updated Successfully");
-      resetForm();
+      setEditMode(false);
+      setEditId(null);
+      setForm({
+        title: "",
+        description: "",
+        mrpPrice: "",
+        discountPrice: "",
+        gst: "18",
+        stock: "",
+        category: "",
+        images: [],
+        isTrending: false,
+        isFeatured: false,
+        isSubsidy: false,
+      });
+      setImagePreviews([]);
       fetchProducts();
+      setActiveTab("PRODUCT_LIST");
     } catch (err) {
-      // ✅ FIX 3: Improved error handling
       alert(err.response?.data?.message || "Failed to update product");
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setForm({
-      title: "",
-      description: "",
-      mrpPrice: "",
-      discountPrice: "",
-      gst: "18",
-      stock: "",
-      category: "",
-      images: [],
-      isTrending: false,
-      isFeatured: false,
-      isSubsidy: false,
-    });
-    setImagePreviews([]);
-    setEditMode(false);
-    setEditId(null);
-  };
-
   const deleteProduct = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
       await API.delete(`/products/${id}`);
+      alert("✅ Product Deleted");
       fetchProducts();
     } catch (err) {
       alert("Failed to delete product");
@@ -553,10 +579,12 @@ export default function AdminDashboard() {
   };
 
   // ✅ SEARCH FILTER LOGIC
-  const filteredProducts = products.filter(p => 
+  const filteredProducts = products.filter(p =>
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     getCategoryName(p).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!isAuthChecked) return null;
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -577,7 +605,7 @@ export default function AdminDashboard() {
           <SidebarItem icon={FiPlus} label="Add Product" active={activeTab === "ADD_PRODUCT"} onClick={() => setActiveTab("ADD_PRODUCT")} />
           <SidebarItem icon={FiGrid} label="All Products" active={activeTab === "PRODUCT_LIST"} onClick={() => setActiveTab("PRODUCT_LIST")} />
           <SidebarItem icon={FiTag} label="Categories" active={activeTab === "CATEGORIES"} onClick={() => setActiveTab("CATEGORIES")} />
-          
+
           <div className="my-6 h-[1px] bg-slate-50"></div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-4">Content</p>
           <SidebarItem icon={FiStar} label="Reviews" active={activeTab === "REVIEWS"} onClick={() => setActiveTab("REVIEWS")} />
@@ -586,7 +614,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="p-6 border-t border-slate-50">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all font-semibold text-sm">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all font-semibold text-sm">
             <FiLogOut size={18} />
             <span>Logout</span>
           </button>
@@ -622,7 +650,7 @@ export default function AdminDashboard() {
 
         <AnimatePresence mode="wait">
           {activeTab === "ADD_PRODUCT" && (
-            <motion.div 
+            <motion.div
               key="add-product"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -674,8 +702,8 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                       {imagePreviews.map((src, i) => (
                         <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 group">
-                          <img src={src} alt="Preview" className="w-full h-full object-cover" />
-                          <button onClick={() => removeImage(i)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <img src={src} alt="Product Preview" className="w-full h-full object-cover" />
+                          <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <FiX size={14} />
                           </button>
                         </div>
@@ -729,12 +757,12 @@ export default function AdminDashboard() {
               <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
                 <div className="relative w-full sm:w-96">
                   <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search by name or category..." 
+                  <input
+                    type="text"
+                    placeholder="Search by name or category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition-all" 
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
                   />
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
@@ -761,14 +789,14 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm flex-shrink-0">
                               {p.images && p.images[0] ? (
-                                <img 
+                                <img
                                   src={
                                     typeof p.images[0] === "string"
-                                      ? p.images[0].startsWith("http") ? p.images[0] : `${BASE_URL}/${p.images[0].replace(/\\/g, "/")}`
+                                      ? p.images[0].startsWith("http") ? p.images[0] : `${BASE_URL}/${p.images[0].replace(/\\/g, '/')}`
                                       : p.images[0]?.url ? `${BASE_URL}/${p.images[0].url}` : ""
-                                  } 
-                                  alt={p.title} 
-                                  className="w-full h-full object-cover" 
+                                  }
+                                  alt={p.title}
+                                  className="w-full h-full object-cover"
                                 />
                               ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={20} /></div>}
                             </div>
@@ -815,7 +843,7 @@ export default function AdminDashboard() {
                 {filteredProducts.length === 0 && (
                   <div className="p-20 flex flex-col items-center justify-center text-slate-400">
                     <FiSearch size={48} className="mb-4 opacity-20" />
-                    <p className="font-bold">No products found matching "{searchTerm}"</p>
+                    <p className="font-bold">No products found matching \"{searchTerm}\"</p>
                   </div>
                 )}
               </div>
@@ -831,11 +859,17 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 ml-1">Category Image</label>
                     <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden">
-                        {categoryImagePreview ? <img src={categoryImagePreview} alt="Category Preview" className="w-full h-full object-cover" /> : <FiImage size={24} className="text-slate-300" />}
-                      </div>
+                      {categoryImagePreview ? (
+                        <div className="w-24 h-24 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden">
+                          <img src={categoryImagePreview} alt="Category Preview" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center text-slate-300">
+                          <FiImage size={24} />
+                        </div>
+                      )}
                       <button onClick={() => categoryImageInputRef.current.click()} className="px-4 py-2 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all text-xs font-bold flex items-center gap-2">
-                        <FiUploadCloud size={16} /> Upload Image
+                        <FiUploadCloud size={18} /> Upload
                       </button>
                       <input type="file" ref={categoryImageInputRef} className="hidden" onChange={handleCategoryImageChange} accept="image/*" />
                     </div>
@@ -856,20 +890,20 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden">
                           {cat.image ? (
-                            <img 
+                            <img
                               src={
                                 typeof cat.image === "string"
-                                  ? cat.image.startsWith("http") ? cat.image : `${BASE_URL}/${cat.image.replace(/\\/g, "/")}`
+                                  ? cat.image.startsWith("http") ? cat.image : `${BASE_URL}/${cat.image.replace(/\\/g, '/')}`
                                   : cat.image?.url ? `${BASE_URL}/${cat.image.url}` : ""
-                              } 
-                              alt={cat.name} 
-                              className="w-full h-full object-cover" 
+                              }
+                              alt={cat.name}
+                              className="w-full h-full object-cover"
                             />
-                          ) : <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300"><FiImage size={16} /></div>}
+                          ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={16} /></div>}
                         </div>
                         <span className="font-semibold text-slate-700">{cat.name}</span>
                       </div>
-                      <button 
+                      <button
                         onClick={() => deleteCategory(cat._id)}
                         className="text-slate-400 hover:text-red-500 transition-colors"
                       >
@@ -917,14 +951,14 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100">
                         {rev.image ? (
-                          <img 
+                          <img
                             src={
                               typeof rev.image === "string"
-                                ? rev.image.startsWith("http") ? rev.image : `${BASE_URL}/${rev.image.replace(/\\/g, "/")}`
+                                ? rev.image.startsWith("http") ? rev.image : `${BASE_URL}/${rev.image.replace(/\\/g, '/')}`
                                 : rev.image?.url ? `${BASE_URL}/${rev.image.url}` : ""
-                            } 
-                            alt={rev.name} 
-                            className="w-full h-full object-cover" 
+                            }
+                            alt={rev.name}
+                            className="w-full h-full object-cover"
                           />
                         ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiUser size={20} /></div>}
                       </div>
@@ -935,7 +969,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-600 text-sm leading-relaxed italic">"{rev.message}"</p>
+                    <p className="text-slate-600 text-sm leading-relaxed italic">\"{rev.message}\"</p>
                   </div>
                 ))}
               </div>
@@ -978,14 +1012,14 @@ export default function AdminDashboard() {
                     <button onClick={() => deleteStory(story._id)} className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"><FiTrash2 size={14} /></button>
                     <div className="aspect-video bg-slate-100 relative">
                       {story.image ? (
-                        <img 
+                        <img
                           src={
                             typeof story.image === "string"
-                              ? story.image.startsWith("http") ? story.image : `${BASE_URL}/${story.image.replace(/\\/g, "/")}`
+                              ? story.image.startsWith("http") ? story.image : `${BASE_URL}/${story.image.replace(/\\/g, '/')}`
                               : story.image?.url ? `${BASE_URL}/${story.image.url}` : ""
-                          } 
-                          alt={story.title} 
-                          className="w-full h-full object-cover" 
+                          }
+                          alt={story.title}
+                          className="w-full h-full object-cover"
                         />
                       ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/50 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1"><FiMapPin size={10} /> {story.location}</div>
@@ -1008,11 +1042,11 @@ export default function AdminDashboard() {
           {activeTab === "BANNERS" && (
             <motion.div key="banners" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto space-y-8">
               <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-                <h3 className="text-lg font-bold flex items-center gap-2"><FiImage className="text-blue-500" /> Add Homepage Banner</h3>
+                <h3 className="text-lg font-bold flex items-center gap-2"><FiImage className="text-blue-600" /> Add New Banner</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormInput label="Banner Title" value={bannerForm.title} onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })} placeholder="Summer Sale 2024" icon={FiType} />
-                  <FormInput label="Subtitle" value={bannerForm.subtitle} onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })} placeholder="Up to 40% Off" icon={FiFileText} />
-                  <FormInput label="Target Link" value={bannerForm.link} onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })} placeholder="/shop/solar" icon={FiExternalLink} />
+                  <FormInput label="Title" value={bannerForm.title} onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })} placeholder="Summer Sale" icon={FiType} />
+                  <FormInput label="Subtitle" value={bannerForm.subtitle} onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })} placeholder="Up to 50% Off" icon={FiType} />
+                  <FormInput label="Link URL" value={bannerForm.link} onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })} placeholder="/shop" icon={FiExternalLink} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 ml-1">Banner Image (Wide Recommended)</label>
@@ -1040,14 +1074,14 @@ export default function AdminDashboard() {
                     <div key={banner._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative flex flex-col md:flex-row">
                       <div className="md:w-1/3 aspect-video md:aspect-auto bg-slate-100">
                         {banner.image ? (
-                          <img 
+                          <img
                             src={
                               typeof banner.image === "string"
-                                ? banner.image.startsWith("http") ? banner.image : `${BASE_URL}/${banner.image.replace(/\\/g, "/")}`
+                                ? banner.image.startsWith("http") ? banner.image : `${BASE_URL}/${banner.image.replace(/\\/g, '/')}`
                                 : banner.image?.url ? `${BASE_URL}/${banner.image.url}` : ""
-                            } 
-                            alt={banner.title} 
-                            className="w-full h-full object-cover" 
+                            }
+                            alt={banner.title}
+                            className="w-full h-full object-cover"
                           />
                         ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={32} /></div>}
                       </div>
