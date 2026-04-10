@@ -3,8 +3,11 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 
-const { createReview, getReviews } = require("../controllers/reviewController");
-const auth = require("../middleware/authMiddleware");
+const {
+  createReview,
+  getReviews,
+  deleteReview // 🔥 ADD THIS
+} = require("../controllers/reviewController");
 
 // ================= MULTER CONFIG =================
 const storage = multer.diskStorage({
@@ -19,23 +22,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ================= CREATE REVIEW =================
-
-// 🔥 SAFE ROUTE (Auth + Upload + Debug)
 router.post("/", upload.single("image"), async (req, res, next) => {
   try {
     console.log("👉 Incoming Review Request");
 
-    // 🔥 TOKEN CHECK (optional)
     const token = req.headers.authorization;
     if (!token) {
       console.log("❌ No Token");
-      // For now allow request (remove this if you want strict auth)
     }
 
     console.log("BODY:", req.body);
     console.log("FILE:", req.file);
 
-    // 👉 Call controller
     return createReview(req, res);
   } catch (err) {
     console.error("❌ ROUTE ERROR:", err);
@@ -45,5 +43,8 @@ router.post("/", upload.single("image"), async (req, res, next) => {
 
 // ================= GET ALL REVIEWS =================
 router.get("/", getReviews);
+
+// 🔥 DELETE REVIEW (IMPORTANT)
+router.delete("/:id", deleteReview);
 
 module.exports = router;

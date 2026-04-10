@@ -25,10 +25,12 @@ router.get("/test", (req, res) => {
 });
 
 // ================= CREATE CATEGORY =================
-// 🔒 admin + image upload
 router.post("/", auth, upload.single("image"), categoryController.createCategory);
 
 // ================= GET ALL =================
 router.get("/", categoryController.getCategories);
+
+// 🔥 DELETE CATEGORY (IMPORTANT)
+router.delete("/:id", categoryController.deleteCategory);
 
 module.exports = router;
