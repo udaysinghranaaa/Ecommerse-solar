@@ -34,7 +34,7 @@ export default function Categories({ categories }) {
             return (
               <div
                 key={c._id}
-                onClick={() => router.push(`/category/${c._id}`)}
+                onClick={() => router.push(`/shop?category=${c._id}`)} // 🔥 ONLY CHANGE
                 className="group cursor-pointer rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition"
               >
                 <img
