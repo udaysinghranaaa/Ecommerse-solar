@@ -4,14 +4,19 @@ import "./globals.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useEffect, useState } from "react";
-import API from "./services/api"; // ✅ CHANGE
+import { usePathname } from "next/navigation"; // ✅ ADD
+import API from "./services/api";
 
 export default function RootLayout({ children }) {
   const [categories, setCategories] = useState([]);
+  const pathname = usePathname(); // ✅ ADD
+
+  // 🔥 CHECK ADMIN ROUTE
+  const isAdmin = pathname.startsWith("/admin");
 
   // 🔥 GLOBAL CATEGORY FETCH
   useEffect(() => {
-    API.get("/category") // ✅ CHANGE
+    API.get("/category")
       .then((res) => {
         const data =
           res.data.categories || (Array.isArray(res.data) ? res.data : []);
@@ -24,11 +29,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-white text-gray-900">
 
-        <Navbar categories={categories} />
+        {/* ❌ ADMIN PAGE पर Navbar hide */}
+        {!isAdmin && <Navbar categories={categories} />}
 
         <main className="min-h-screen">{children}</main>
 
-        <Footer />
+        {/* ❌ ADMIN PAGE पर Footer भी hide */}
+        {!isAdmin && <Footer />}
 
       </body>
     </html>

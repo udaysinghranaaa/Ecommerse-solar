@@ -2,25 +2,24 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
-// ✅ IMPORT CONTROLLERS
-const {
-  createProduct,
-  getProducts,
-  getSingleProduct,
-  updateProduct,
-  deleteProduct,
-  getProductsByCategory,
-  getTrendingProducts,
-  getFeaturedProducts,
-  getSubsidyProducts, // 🔥 NEW
-} = require("../controllers/productController");
+// ✅ SAFE IMPORT (FULL CONTROLLER)
+const controller = require("../controllers/productController");
 
 const auth = require("../middleware/authMiddleware");
 
-// ✅ MULTER CONFIG
+// ✅ MULTER CONFIG (FIXED FOR RENDER)
+const uploadPath = "uploads/";
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath);
+}
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
+  destination: (req, file, cb) => {
+    cb(null, uploadPath);
+  },
   filename: (req, file, cb) =>
     cb(null, Date.now() + path.extname(file.originalname)),
 });
@@ -29,35 +28,57 @@ const upload = multer({ storage });
 
 // ================= ROUTES =================
 
-// 🔥 IMPORTANT: Specific routes FIRST
+// CATEGORY
+if (typeof controller.getProductsByCategory === "function") {
+  router.get("/category/:id", controller.getProductsByCategory);
+}
 
-// ✅ CATEGORY PRODUCTS
-router.get("/category/:id", getProductsByCategory);
+// TRENDING
+if (typeof controller.getTrendingProducts === "function") {
+  router.get("/trending", controller.getTrendingProducts);
+}
 
-// 🔥 TRENDING
-router.get("/trending", getTrendingProducts);
+// FEATURED
+if (typeof controller.getFeaturedProducts === "function") {
+  router.get("/featured", controller.getFeaturedProducts);
+}
 
-// ❤️ FEATURED
-router.get("/featured", getFeaturedProducts);
-
-// 🟢 SUBSIDY PRODUCTS (NEW)
-router.get("/subsidy", getSubsidyProducts);
+// SUBSIDY
+if (typeof controller.getSubsidyProducts === "function") {
+  router.get("/subsidy", controller.getSubsidyProducts);
+}
 
 // ================= NORMAL =================
 
 // GET ALL
-router.get("/", getProducts);
+router.get("/", controller.getProducts);
 
 // GET SINGLE
-router.get("/:id", getSingleProduct);
+router.get("/:id", controller.getSingleProduct);
 
 // CREATE
-router.post("/", auth, upload.array("images", 5), createProduct);
+router.post(
+  "/",
+  auth,
+  upload.fields([
+    { name: "images", maxCount: 5 },
+    { name: "videos", maxCount: 2 },
+  ]),
+  controller.createProduct
+);
 
 // UPDATE
-router.put("/:id", auth, upload.array("images", 5), updateProduct);
+router.put(
+  "/:id",
+  auth,
+  upload.fields([
+    { name: "images", maxCount: 5 },
+    { name: "videos", maxCount: 2 },
+  ]),
+  controller.updateProduct
+);
 
 // DELETE
-router.delete("/:id", auth, deleteProduct);
+router.delete("/:id", auth, controller.deleteProduct);
 
 module.exports = router;

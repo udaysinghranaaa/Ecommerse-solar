@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// ✅ Safe BASE URL
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://ecommerse-solar.onrender.com";
@@ -9,7 +8,7 @@ const API = axios.create({
   baseURL: `${BASE_URL}/api`,
 });
 
-// ✅ Interceptor (safe for Next.js)
+// 🔥 interceptor
 API.interceptors.request.use((req) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
@@ -26,11 +25,20 @@ API.interceptors.request.use((req) => {
 
 export default API;
 
-// ✅ APIs
+// APIs
 export const getProducts = () => API.get("/products");
-export const createProduct = (data) => API.post("/products", data);
 
-// 🔥 ADD THIS (IMPORTANT)
+// ✅ FIXED (IMPORTANT)
+export const createProduct = (data) =>
+  API.post("/products", data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+// 🔥 FIXED
+export const checkAdminAuth = () => API.get("/auth/admin-check");
+
 export const getImageUrl = (path) => {
   if (!path) return "";
   return `${BASE_URL}/${path.replace(/\\/g, "/")}`;

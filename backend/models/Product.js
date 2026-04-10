@@ -77,22 +77,68 @@ const productSchema = new mongoose.Schema(
       default: false,
     },
 
-    // 🔥 NEW (VERY IMPORTANT)
     isSubsidy: {
       type: Boolean,
       default: false,
     },
 
-    // 🔥 EXTRA (OPTIONAL BUT PRO)
     isActive: {
       type: Boolean,
       default: true,
     },
+
+    // =========================
+    // 🔥 EXISTING (NO CHANGE)
+    // =========================
+
+    // ✅ TECHNICAL SPECIFICATIONS
+    technicalSpecs: [
+      {
+        key: { type: String },
+        value: { type: String },
+      },
+    ],
+
+    // ✅ FAQs
+    faqs: [
+      {
+        question: { type: String },
+        answer: { type: String },
+      },
+    ],
+
+    // ✅ Q/A
+    qa: [
+      {
+        question: { type: String },
+        answer: { type: String },
+      },
+    ],
+
+    // =========================
+    // 🔥 NEW ADDITIONS
+    // =========================
+
+    // ✅ CUSTOMER REVIEWS (Admin controlled)
+    customerReviews: [
+      {
+        name: { type: String },
+        rating: { type: Number },
+        comment: { type: String },
+      },
+    ],
+
+    // ✅ PRODUCT VIDEOS
+    videos: [
+      {
+        url: { type: String },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-// 🔥 INDEXES (performance boost)
+// 🔥 INDEXES
 productSchema.index({ category: 1 });
 productSchema.index({ isTrending: 1 });
 productSchema.index({ isFeatured: 1 });
