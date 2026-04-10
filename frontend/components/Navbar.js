@@ -67,9 +67,9 @@ export default function Navbar({ categories }) {
                   {link.hasDropdown && <ChevronDown size={16} />}
                 </button>
 
-                {/* 🔥 FIXED SAFE MAP */}
+                {/* 🔥 FIXED DROPDOWN (NO GAP ISSUE) */}
                 {link.hasDropdown && (
-                  <div className="absolute top-10 w-56 bg-white shadow-xl rounded-xl hidden group-hover:block z-50 border">
+                  <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-xl rounded-xl hidden group-hover:block z-50 border">
 
                     {categories?.length > 0 ? (
                       categories?.map((cat) => (
@@ -161,7 +161,6 @@ export default function Navbar({ categories }) {
                   {link.hasDropdown && <ChevronDown size={16} />}
                 </button>
 
-                {/* 🔥 FIX SAFE MAP */}
                 {link.hasDropdown && showMobileCategories && (
                   <div className="pl-4">
                     {categories?.map((cat) => (
