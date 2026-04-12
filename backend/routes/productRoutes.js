@@ -1,3 +1,4 @@
+console.log("🔥 BACKEND ROUTE UPDATED FINAL");
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
