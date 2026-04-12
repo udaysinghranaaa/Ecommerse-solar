@@ -28,6 +28,8 @@ const upload = multer({ storage });
 
 // ================= ROUTES =================
 
+// ✅ SPECIAL ROUTES (ALWAYS FIRST)
+
 // CATEGORY
 if (typeof controller.getProductsByCategory === "function") {
   router.get("/category/:id", controller.getProductsByCategory);
@@ -53,7 +55,7 @@ if (typeof controller.getSubsidyProducts === "function") {
 // GET ALL
 router.get("/", controller.getProducts);
 
-// GET SINGLE
+// ❗ IMPORTANT: KEEP THIS LAST (to avoid route conflict)
 router.get("/:id", controller.getSingleProduct);
 
 // CREATE
