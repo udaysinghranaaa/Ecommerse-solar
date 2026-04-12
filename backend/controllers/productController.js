@@ -96,12 +96,9 @@ exports.createProduct = async (req, res) => {
       customerReviews: parsedReviews,
       videos: videoPaths,
 
-      isTrending:
-        req.body.isTrending === "true" || req.body.isTrending === true,
-      isFeatured:
-        req.body.isFeatured === "true" || req.body.isFeatured === true,
-      isSubsidy:
-        req.body.isSubsidy === "true" || req.body.isSubsidy === true,
+     isTrending: JSON.parse(req.body.isTrending || "false"),
+isFeatured: JSON.parse(req.body.isFeatured || "false"),
+isSubsidy: JSON.parse(req.body.isSubsidy || "false"),
 
       isActive: true,
     });
