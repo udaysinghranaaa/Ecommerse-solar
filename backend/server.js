@@ -11,7 +11,7 @@ const connectDB = require("./config/db");
 const app = express();
 
 // ================= DB =================
-connectDB();
+connectDB(); // safe now (no process.exit)
 
 // ================= FOLDER SETUP =================
 const uploadPath = path.join(__dirname, "uploads");
@@ -22,17 +22,16 @@ if (!fs.existsSync(uploadPath)) {
 
 // ================= MIDDLEWARE =================
 
-// ✅ CORS (production ready)
+// ✅ FIXED CORS
 app.use(cors({
   origin: process.env.FRONTEND_URL || "*",
-  credentials: true,
 }));
 
-// ✅ BODY PARSERS
+// ================= BODY =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ STATIC FILES
+// ================= STATIC =================
 app.use("/uploads", express.static(uploadPath));
 
 // ================= ROUTES =================
@@ -51,7 +50,7 @@ app.get("/", (req, res) => {
   res.send("API Running 🚀");
 });
 
-// ================= ERROR HANDLER =================
+// ================= ERROR =================
 app.use((err, req, res, next) => {
   console.error("SERVER ERROR:", err);
   res.status(500).json({ error: err.message });
