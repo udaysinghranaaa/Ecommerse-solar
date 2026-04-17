@@ -10,9 +10,6 @@ const connectDB = require("./config/db");
 
 const app = express();
 
-// ================= DB =================
-connectDB(); // safe now (no process.exit)
-
 // ================= FOLDER SETUP =================
 const uploadPath = path.join(__dirname, "uploads");
 
@@ -22,16 +19,16 @@ if (!fs.existsSync(uploadPath)) {
 
 // ================= MIDDLEWARE =================
 
-// ✅ FIXED CORS
+// ✅ CORS (safe + production ready)
 app.use(cors({
   origin: process.env.FRONTEND_URL || "*",
 }));
 
-// ================= BODY =================
-app.use(express.json());
+// ✅ BODY PARSER
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ================= STATIC =================
+// ✅ STATIC FILES
 app.use("/uploads", express.static(uploadPath));
 
 // ================= ROUTES =================
@@ -45,20 +42,39 @@ app.use("/api/banners", require("./routes/bannerRoutes"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/orders", require("./routes/order"));
 
-// ================= TEST =================
+// ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
   res.send("API Running 🚀");
 });
 
-// ================= ERROR =================
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
-  console.error("SERVER ERROR:", err);
-  res.status(500).json({ error: err.message });
+  console.error("SERVER ERROR:", err.message);
+  res.status(500).json({
+    success: false,
+    error: err.message || "Internal Server Error",
+  });
 });
 
-// ================= SERVER =================
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+// ================= 404 HANDLER =================
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
 });
+
+// ================= START SERVER (IMPORTANT FIX) =================
+const startServer = async () => {
+  try {
+    await connectDB(); // ⛔ WAIT for MongoDB
+
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("❌ Server failed to start:", error.message);
+  }
+};
+
+startServer();
