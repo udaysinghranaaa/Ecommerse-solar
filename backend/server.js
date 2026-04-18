@@ -1,10 +1,9 @@
+require("dotenv").config();
+
 const express = require("express");
-const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-
-dotenv.config();
 
 const connectDB = require("./config/db");
 
@@ -18,17 +17,14 @@ if (!fs.existsSync(uploadPath)) {
 }
 
 // ================= MIDDLEWARE =================
-
-// ✅ CORS (safe + production ready)
 app.use(cors({
   origin: process.env.FRONTEND_URL || "*",
+  credentials: true,
 }));
 
-// ✅ BODY PARSER
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ STATIC FILES
 app.use("/uploads", express.static(uploadPath));
 
 // ================= ROUTES =================
@@ -42,12 +38,12 @@ app.use("/api/banners", require("./routes/bannerRoutes"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/orders", require("./routes/order"));
 
-// ================= HEALTH CHECK =================
+// ================= HEALTH =================
 app.get("/", (req, res) => {
   res.send("API Running 🚀");
 });
 
-// ================= ERROR HANDLER =================
+// ================= ERROR =================
 app.use((err, req, res, next) => {
   console.error("SERVER ERROR:", err.message);
   res.status(500).json({
@@ -56,15 +52,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ================= 404 HANDLER =================
+// ================= 404 =================
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ================= START SERVER (IMPORTANT FIX) =================
+// ================= START =================
 const startServer = async () => {
   try {
-    await connectDB(); // ⛔ WAIT for MongoDB
+    console.log("🌍 Starting server...");
+
+    await connectDB(); // wait for DB
 
     const PORT = process.env.PORT || 5000;
 
@@ -74,6 +72,7 @@ const startServer = async () => {
 
   } catch (error) {
     console.error("❌ Server failed to start:", error.message);
+    process.exit(1);
   }
 };
 
