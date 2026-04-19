@@ -28,7 +28,11 @@ export default function Login() {
       router.push("/admin/products");
 
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid Credentials");
+      alert(
+  err.response?.data?.msg ||
+  err.response?.data?.message ||
+  "Invalid Credentials"
+);
     }
   };
 
