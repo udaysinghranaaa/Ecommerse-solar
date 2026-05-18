@@ -4,14 +4,18 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { FiPackage, FiShoppingCart } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useCart } from "../context/CartContext";
 
 // ✅ FIXED BASE URL
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://ecommerse-solar.onrender.com";
+  "http://localhost:5000";
 
 const ProductCard = ({ product }) => {
   const router = useRouter();
+
+  // ✅ CART CONTEXT
+  const { addToCart } = useCart();
 
   // 🔥 IMAGE HANDLE
   const getImageUrl = () => {
@@ -37,6 +41,11 @@ const ProductCard = ({ product }) => {
     mrpPrice > productPrice
       ? Math.round(((mrpPrice - productPrice) / mrpPrice) * 100)
       : null;
+
+  // 🛒 ADD TO CART FUNCTION
+  const handleAddToCart = () => {
+    addToCart(product);
+  };
 
   return (
     <motion.div
@@ -102,7 +111,10 @@ const ProductCard = ({ product }) => {
             View
           </button>
 
-          <button className="bg-green-600 text-white px-3 rounded-lg hover:bg-green-700 transition">
+          <button
+            onClick={handleAddToCart}
+            className="bg-green-600 text-white px-3 rounded-lg hover:bg-green-700 transition"
+          >
             <FiShoppingCart size={18} />
           </button>
 

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { useCart } from "../context/CartContext";
 
 export default function Navbar({ categories }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +21,9 @@ export default function Navbar({ categories }) {
 
   const router = useRouter();
   const pathname = usePathname();
+
+  // ✅ CART CONTEXT
+  const { cartItems } = useCart();
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -67,7 +71,7 @@ export default function Navbar({ categories }) {
                   {link.hasDropdown && <ChevronDown size={16} />}
                 </button>
 
-                {/* 🔥 FIXED DROPDOWN (NO GAP ISSUE) */}
+                {/* 🔥 DROPDOWN */}
                 {link.hasDropdown && (
                   <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-xl rounded-xl hidden group-hover:block z-50 border">
 
@@ -96,6 +100,7 @@ export default function Navbar({ categories }) {
 
             <div className="flex items-center border rounded-xl px-3 py-1">
               <Search size={18} />
+
               <input
                 type="text"
                 placeholder="Search products..."
@@ -110,11 +115,18 @@ export default function Navbar({ categories }) {
               />
             </div>
 
+            {/* ✅ CART */}
             <button
               onClick={() => router.push("/cart")}
-              className="hover:text-green-600"
+              className="relative hover:text-green-600"
             >
               <ShoppingCart size={22} />
+
+              {cartItems.length > 0 && (
+                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                  {cartItems.length}
+                </span>
+              )}
             </button>
 
             <a
@@ -134,6 +146,7 @@ export default function Navbar({ categories }) {
             </button>
           </div>
 
+          {/* ✅ MOBILE MENU */}
           <div className="md:hidden">
             <button onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X /> : <Menu />}
@@ -141,6 +154,7 @@ export default function Navbar({ categories }) {
           </div>
         </div>
 
+        {/* ✅ MOBILE NAV */}
         {isOpen && (
           <div className="md:hidden flex flex-col space-y-2 pb-4">
 
@@ -158,37 +172,48 @@ export default function Navbar({ categories }) {
                   className="px-3 py-2 text-left text-sm w-full flex justify-between items-center"
                 >
                   {link.label}
-                  {link.hasDropdown && <ChevronDown size={16} />}
+
+                  {link.hasDropdown && (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
 
-                {link.hasDropdown && showMobileCategories && (
-                  <div className="pl-4">
-                    {categories?.map((cat) => (
-                      <div
-                        key={cat._id}
-                        onClick={() => {
-                          router.push(`/shop?category=${cat._id}`);
-                          setIsOpen(false);
-                        }}
-                        className="py-1 text-sm text-gray-600"
-                      >
-                        {cat.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {link.hasDropdown &&
+                  showMobileCategories && (
+                    <div className="pl-4">
+                      {categories?.map((cat) => (
+                        <div
+                          key={cat._id}
+                          onClick={() => {
+                            router.push(
+                              `/shop?category=${cat._id}`
+                            );
+
+                            setIsOpen(false);
+                          }}
+                          className="py-1 text-sm text-gray-600"
+                        >
+                          {cat.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             ))}
 
             <div className="flex items-center border rounded-lg px-2 mx-3">
               <Search size={18} />
+
               <input
                 type="text"
                 placeholder="Search..."
                 className="outline-none px-2 py-1 text-sm w-full"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    router.push(`/shop?search=${e.target.value}`);
+                    router.push(
+                      `/shop?search=${e.target.value}`
+                    );
+
                     setIsOpen(false);
                   }
                 }}
@@ -197,8 +222,21 @@ export default function Navbar({ categories }) {
 
             <div className="flex justify-between items-center px-3 mt-2 gap-2">
 
-              <button onClick={() => router.push("/cart")}>
+              {/* ✅ MOBILE CART */}
+              <button
+                onClick={() => {
+                  router.push("/cart");
+                  setIsOpen(false);
+                }}
+                className="relative"
+              >
                 <ShoppingCart size={22} />
+
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                    {cartItems.length}
+                  </span>
+                )}
               </button>
 
               <a

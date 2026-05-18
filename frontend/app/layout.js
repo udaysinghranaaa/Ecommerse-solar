@@ -4,12 +4,13 @@ import "./globals.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation"; // ✅ ADD
+import { usePathname } from "next/navigation";
 import API from "./services/api";
+import { CartProvider } from "../context/CartContext";
 
 export default function RootLayout({ children }) {
   const [categories, setCategories] = useState([]);
-  const pathname = usePathname(); // ✅ ADD
+  const pathname = usePathname();
 
   // 🔥 CHECK ADMIN ROUTE
   const isAdmin = pathname.startsWith("/admin");
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
       .then((res) => {
         const data =
           res.data.categories || (Array.isArray(res.data) ? res.data : []);
+
         setCategories(data);
       })
       .catch((err) => console.log("Category Error:", err));
@@ -28,15 +30,19 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-white text-gray-900">
+        <CartProvider>
 
-        {/* ❌ ADMIN PAGE पर Navbar hide */}
-        {!isAdmin && <Navbar categories={categories} />}
+          {/* ❌ ADMIN PAGE पर Navbar hide */}
+          {!isAdmin && <Navbar categories={categories} />}
 
-        <main className="min-h-screen">{children}</main>
+          <main className="min-h-screen">
+            {children}
+          </main>
 
-        {/* ❌ ADMIN PAGE पर Footer भी hide */}
-        {!isAdmin && <Footer />}
+          {/* ❌ ADMIN PAGE पर Footer भी hide */}
+          {!isAdmin && <Footer />}
 
+        </CartProvider>
       </body>
     </html>
   );

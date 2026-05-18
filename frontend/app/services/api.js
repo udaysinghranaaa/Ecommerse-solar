@@ -2,7 +2,7 @@ import axios from "axios";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://ecommerse-solar.onrender.com";
+  "http://localhost:5000";
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,

@@ -8,10 +8,7 @@ export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // ✅ SAFE API URL (FIX)
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://ecommerse-solar.onrender.com";
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   // 🔥 FETCH FROM BACKEND (FIXED DATA FORMAT)
   useEffect(() => {
     axios

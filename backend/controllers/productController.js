@@ -38,11 +38,11 @@ exports.createProduct = async (req, res) => {
       url: file.path,
     }));
 
-    // ✅ FIXED SAFE PARSE (ONLY CHANGE HERE)
+    // ✅ SAFE PARSE
     const safeParse = (data) => {
       try {
         if (!data) return [];
-        if (typeof data === "object") return data; // 🔥 FIX
+        if (typeof data === "object") return data;
         return JSON.parse(data);
       } catch {
         return [];
@@ -50,19 +50,19 @@ exports.createProduct = async (req, res) => {
     };
 
     const parsedSpecs = safeParse(req.body.technicalSpecs).filter(
-      (s) => s?.key && s?.value // 🔥 FIX
+      (s) => s?.key && s?.value
     );
 
     const parsedFaqs = safeParse(req.body.faqs).filter(
-      (f) => f?.question && f?.answer // 🔥 FIX
+      (f) => f?.question && f?.answer
     );
 
     const parsedQa = safeParse(req.body.qa).filter(
-      (q) => q?.question && q?.answer // 🔥 FIX
+      (q) => q?.question && q?.answer
     );
 
     const parsedReviews = safeParse(req.body.customerReviews).map((r) => ({
-      name: r?.name || "", // 🔥 FIX
+      name: r?.name || "",
       rating: Number(r?.rating) || 0,
       comment: r?.comment || "",
     }));
@@ -96,9 +96,9 @@ exports.createProduct = async (req, res) => {
       customerReviews: parsedReviews,
       videos: videoPaths,
 
-     isTrending: JSON.parse(req.body.isTrending || "false"),
-isFeatured: JSON.parse(req.body.isFeatured || "false"),
-isSubsidy: JSON.parse(req.body.isSubsidy || "false"),
+      isTrending: JSON.parse(req.body.isTrending || "false"),
+      isFeatured: JSON.parse(req.body.isFeatured || "false"),
+      isSubsidy: JSON.parse(req.body.isSubsidy || "false"),
 
       isActive: true,
     });
@@ -106,6 +106,7 @@ isSubsidy: JSON.parse(req.body.isSubsidy || "false"),
     res.status(201).json(product);
   } catch (err) {
     console.error("❌ CREATE PRODUCT ERROR:", err);
+
     res.status(500).json({
       message: "Product creation failed",
       error: err.message,
@@ -117,6 +118,7 @@ isSubsidy: JSON.parse(req.body.isSubsidy || "false"),
 exports.getProducts = async (req, res) => {
   try {
     const products = await Product.find(activeFilter).populate("category");
+
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -129,7 +131,9 @@ exports.getSingleProduct = async (req, res) => {
     const product = await Product.findById(req.params.id).populate("category");
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({
+        message: "Product not found",
+      });
     }
 
     res.json({
@@ -142,6 +146,70 @@ exports.getSingleProduct = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// ================= FEATURED =================
+exports.getFeaturedProducts = async (req, res) => {
+  try {
+    const products = await Product.find({
+      isFeatured: true,
+      ...activeFilter,
+    }).populate("category");
+
+    res.json({
+      success: true,
+      products,
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+
+// ================= TRENDING =================
+exports.getTrendingProducts = async (req, res) => {
+  try {
+    const products = await Product.find({
+      isTrending: true,
+      ...activeFilter,
+    }).populate("category");
+
+    res.json({
+      success: true,
+      products,
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+
+// ================= CATEGORY PRODUCTS =================
+exports.getProductsByCategory = async (req, res) => {
+  try {
+    console.log("CATEGORY ID:", req.params.id);
+
+    const products = await Product.find({
+      category: req.params.id,
+      ...activeFilter,
+    }).populate("category");
+
+    console.log("FOUND PRODUCTS:", products);
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -162,7 +230,7 @@ exports.updateProduct = async (req, res) => {
     const safeParse = (data) => {
       try {
         if (!data) return [];
-        if (typeof data === "object") return data; // 🔥 FIX
+        if (typeof data === "object") return data;
         return JSON.parse(data);
       } catch {
         return [];
@@ -213,6 +281,19 @@ exports.updateProduct = async (req, res) => {
       }));
     }
 
+    // ✅ FIX BOOLEAN VALUES
+    if (req.body.isFeatured !== undefined) {
+      updateData.isFeatured = JSON.parse(req.body.isFeatured);
+    }
+
+    if (req.body.isTrending !== undefined) {
+      updateData.isTrending = JSON.parse(req.body.isTrending);
+    }
+
+    if (req.body.isSubsidy !== undefined) {
+      updateData.isSubsidy = JSON.parse(req.body.isSubsidy);
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -222,7 +303,10 @@ exports.updateProduct = async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("❌ UPDATE ERROR:", err);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
@@ -230,9 +314,14 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
+
+    res.json({
+      message: "Deleted",
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
@@ -246,6 +335,8 @@ exports.getSubsidyProducts = async (req, res) => {
 
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };
