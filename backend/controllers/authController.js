@@ -4,35 +4,98 @@ const Admin = require("../models/Admin");
 
 // CREATE ADMIN
 exports.createAdmin = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
+    // check existing admin
+    const existingAdmin = await Admin.findOne({ email });
 
-  const admin = await Admin.create({
-    email,
-    password: hashed,
-  });
+    if (existingAdmin) {
+      return res.status(400).json({
+        msg: "Admin already exists",
+      });
+    }
 
-  res.json(admin);
+    // hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // create admin
+    const admin = await Admin.create({
+      email,
+      password: hashed,
+    });
+
+    res.status(201).json({
+      msg: "Admin created successfully",
+      admin,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      msg: "Server Error",
+    });
+  }
 };
 
 // LOGIN
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const admin = await Admin.findOne({ email });
+    console.log("LOGIN EMAIL:", email);
 
-  if (!admin) return res.status(400).json({ msg: "Admin not found" });
+    // find admin
+    const admin = await Admin.findOne({
+      email: email.trim(),
+    });
 
-  const isMatch = await bcrypt.compare(password, admin.password);
+    console.log("ADMIN FOUND:", admin);
 
-  if (!isMatch) return res.status(400).json({ msg: "Wrong password" });
+    // check admin
+    if (!admin) {
+      return res.status(400).json({
+        msg: "Admin not found",
+      });
+    }
 
-  const token = jwt.sign(
-    { id: admin._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+    // compare password
+    const isMatch = await bcrypt.compare(
+      password,
+      admin.password
+    );
 
-  res.json({ token });
+    // wrong password
+    if (!isMatch) {
+      return res.status(400).json({
+        msg: "Wrong password",
+      });
+    }
+
+    // generate token
+    const token = jwt.sign(
+      {
+        id: admin._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.status(200).json({
+      msg: "Login Successful",
+      token,
+      admin: {
+        id: admin._id,
+        email: admin.email,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      msg: "Server Error",
+    });
+  }
 };
